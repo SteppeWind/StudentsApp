@@ -1,0 +1,32 @@
+﻿@model StudentsApp.WEB.Models.Entities.Edit.AddSubjectToTeacherViewModel
+
+@{
+    ViewBag.Title = "AddSubjectToTeacher";
+}
+
+@using (Html.BeginForm())
+{
+    @Html.HiddenFor(model => model.TeacherId)
+    @Html.HiddenFor(model => model.FacultyId)
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.Subjects, htmlAttributes: new { @class = "control-label" })
+        <br />
+        @foreach (var subject in Model.Subjects)
+        {
+            var item = new SelectListItem()
+            {
+                Text = subject.SubjectName,
+                Value = subject.Id.ToString(),
+                Selected = Model.SelectedIdSubjects.Contains(subject.Id.ToString())
+            };
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" name="SelectedIdSubjects" @(item.Selected ? "checked=\"checked\"" : "") value="@item.Value" />
+                    @item.Text
+                </label>
+            </div>
+        }
+        <input type="submit" class="btn btn-default" value="Сохранить"/>
+    </div>
+}

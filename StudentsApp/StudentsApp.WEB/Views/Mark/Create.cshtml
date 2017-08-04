@@ -1,0 +1,46 @@
+﻿@using StudentsApp.WEB.Models.Entities.ComplexEntities 
+@model ComplexMark
+
+@{
+    ViewBag.Title = "Create";
+}
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div class="form-horizontal">
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+        @if (Model.StudentId == 0)
+        {
+            <div class="form-group">
+                @Html.LabelFor(model => model.ListStudents, htmlAttributes: new { @class = "control-label" })
+                @Html.DropDownListFor(subj => subj.StudentId, Model.ListStudents, new { @class = "form-control" })
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.ListTeachers, htmlAttributes: new { @class = "control-label" })
+                @Html.DropDownListFor(subj => subj.TeacherId, Model.ListTeachers, new { @class = "form-control" })
+            </div>
+        }
+        else
+        {
+            <h3>@ViewBag.StudentName</h3>
+        }
+
+        @Html.HiddenFor(model => model.StudentId)
+        @Html.HiddenFor(model => model.TeacherId)
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.ListSubjects, htmlAttributes: new { @class = "control-label" })
+            @Html.DropDownListFor(subj => subj.SubjectId, Model.ListSubjects, new { @class = "form-control" })
+        </div>
+
+       @Html.Partial("EditPartial", Model)
+
+        <div class="form-group">            
+            <input type="submit" value="Сохранить" class="btn btn-default" />
+        </div>
+    </div>
+}

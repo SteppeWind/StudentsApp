@@ -1,0 +1,148 @@
+﻿@model StudentsApp.WEB.Models.Entities.ComplexEntities.ComplexDean
+@using StudentsApp.WEB.Models.Entities
+
+@{
+    ViewBag.Title = "Details";
+}
+<div>
+    <h2>@Model.FullName</h2>
+    <div class="well">
+        @using (Html.BeginForm("Edit", "Faculty", FormMethod.Post))
+        {
+            <input type="hidden" name="returnUrl" value="@Request.Url" />
+            <div class="form-group">
+                @Html.EditorFor(model => model.Faculty.FacultyName, new { htmlAttributes = new { @class = "form-control" } })
+                <div class="col-md-10">
+                    @Html.ValidationMessageFor(model => model.Faculty.FacultyName, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            @*<input type="submit" class="btn btn-primary" value="Сохранить" />*@
+        }
+    </div>
+
+    <br />
+
+    <div class="well">
+        <h3>Группы</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    @if ((User.IsInRole("dean") && User.Identity.Name.Equals(Model.Email)) || User.IsInRole("admin"))
+                    {
+                        <th>Действия</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Groups)
+                {
+                    using (Html.BeginForm("Edit", "Group", FormMethod.Post))
+                    {
+                        <tr>
+                            <td>
+                                <input type="hidden" name="returnUrl" value="@Request.Url" />
+                                <div class="form-group">
+                                    @Html.EditorFor(model => item.GroupName, new { htmlAttributes = new { @class = "form-control" } })
+                                    <div class="col-md-10">
+                                        @Html.ValidationMessageFor(model => item.GroupName, "", new { @class = "text-danger" })
+                                    </div>
+                                </div>
+                            </td>
+                            @*@if ((User.IsInRole("dean") && User.Identity.Name.Equals(Model.Email)) || User.IsInRole("admin"))
+                            {
+                                <td>
+                                    <button class="btn btn-default glyphicon glyphicon-ok-sign"></button>
+                                </td>
+                            }*@
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+        @Html.Partial("CreateGroup", new GroupViewModel() { FacultyId = Model.FacultyId })
+    </div>
+
+    <br />
+
+    <div class="well">
+        <h3>Дисциплины</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Subjects)
+                {
+                    <tr>
+                        <td>@item.SubjectName</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if ((User.IsInRole("dean") && User.Identity.Name.Equals(Model.Email)) || User.IsInRole("admin"))
+        {
+            <form action="/Subject/Create" method="get">
+                <input type="hidden" name="idFaculty" value="@Model.FacultyId" />
+                <input type="hidden" name="returnUrl" value="@Request.Url" />
+                <input type="submit" value="Добавить дисциплину" class="btn btn-primary" />
+            </form>
+        }
+    </div>
+
+    <br />
+
+    <div class="well">
+        <h3>@Html.LabelFor(model => model.TeachersWithAllStudents, htmlAttributes: new { @class = "control-label" })</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ФИО</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.TeachersWithAllStudents)
+                {
+                    <tr>
+                        <td>
+                            <form action="/Teacher/Details" method="get">
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <input type="submit" value="@item.Abbr" class="btn btn-link" />
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <br />
+
+    <div class="well">
+        <h3>@Html.LabelFor(model => model.TeachersWithMinCountStudents, htmlAttributes: new { @class = "control-label" })</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ФИО</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.TeachersWithMinCountStudents)
+                {
+                    <tr>
+                        <td>
+                            <form action="/Teacher/Details" method="get">
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <input type="submit" value="@item.Abbr" class="btn btn-link" />
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <br />
+</div>

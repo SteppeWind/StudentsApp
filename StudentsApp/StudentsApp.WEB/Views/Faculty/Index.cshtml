@@ -1,0 +1,17 @@
+﻿@model PagedList.IPagedList<StudentsApp.WEB.Models.Entities.FacultyViewModel>
+@using PagedList.Mvc;
+
+@{
+    ViewBag.Title = "Index";
+}
+
+<h2>Факультеты</h2>
+<ul class="nav nav-pills nav-stacked">
+    @foreach (var faculty in Model)
+    {
+        <li class="list-group-item-heading">@Html.Partial("FacultySummary", faculty)</li>
+    }
+</ul>
+<br />
+Сраница @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) из @Model.PageCount
+@Html.PagedListPager(Model, page => Url.Action("Index", new { page }))

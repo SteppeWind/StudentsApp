@@ -1,0 +1,15 @@
+﻿@model StudentsApp.WEB.Models.Entities.ComplexEntities.ComplexMark
+
+@{
+    ViewBag.Title = "Edit";
+}
+
+
+@using (Html.BeginForm())
+{
+    @Html.Partial("EditPartial", Model)
+ 
+    <div class="form-group">
+        <input type="submit" value="Сохранить" class="btn btn-default" />
+    </div>
+}

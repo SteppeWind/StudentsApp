@@ -1,0 +1,184 @@
+﻿@model StudentsApp.WEB.Models.Entities.ComplexEntities.ComplexStudent
+@using StudentsApp.WEB.Models.Entities;
+@using Microsoft.AspNet.Identity;
+@{
+    ViewBag.Title = "GetStudent";
+}
+<br />
+
+<div class="well">
+    <h3>@Model.FullName</h3>
+    <h4>@Model.Email</h4>
+    <h4>Средний балл - @Model.AverageMark</h4>
+    @if (User.Identity.IsAuthenticated && !User.IsInRole("student"))
+    {
+        using (Html.BeginForm("Edit", "Account", FormMethod.Get))
+        {
+            @Html.Hidden("idPerson", Model.Id)
+            @Html.Hidden("returnUrl", Request.Url.PathAndQuery)
+            <input type="submit" class="btn btn-warning" value="Редактировать профиль" />
+        }
+    }
+</div>
+
+<div class="well">
+    <h3>Группы</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Название</th>
+                <th>Факультет</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var group in Model.Groups)
+            {
+                <tr>
+                    <td>@group.GroupName</td>
+                    <td>@group.FacultyName</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+<br />
+<div class="well">
+    <h3>Изучаемые предметы</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Название</th>
+                <th>Факультет</th>
+                @if (User.Identity.IsAuthenticated && !User.IsInRole("student"))
+                {
+                    <th>Действия</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var subject in Model.Subjects)
+            {
+                <tr>
+                    <td>@subject.SubjectName</td>
+                    <td>@subject.FacultyName</td>
+                    @if (User.Identity.IsAuthenticated && !User.IsInRole("student"))
+                    {
+                        <td>
+                            @using (Html.BeginForm("RemoveSubjectFromStudent", "Teacher", FormMethod.Post))
+                            {
+                                @Html.Hidden("idStudent", Model.Id);
+                                @Html.Hidden("idSubject", subject.Id)
+                                @Html.Hidden("returnUrl", Request.Url)
+                                <button class="btn btn-default glyphicon glyphicon-remove"></button>
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+    @if (User.IsInRole("teacher"))
+    {
+        using (Html.BeginForm("AddSubjectToStudent", "Teacher", FormMethod.Get))
+        {
+            @Html.Hidden("idStudent", Model.Id);
+            @Html.Hidden("returnUrl", Request.Url)
+            <input class="btn btn-primary" type="submit" value="Добавить дисциплину" />
+        }
+    }
+</div>
+<br />
+<div class="well">
+    <h3>Сданные дисциплины</h3>
+    <table class="table">
+        <caption><h4>Экзамены</h4></caption>
+        <thead>
+            <tr>
+                <th>Предмет</th>
+                <th>Дата</th>
+                <th>Тип</th>
+                <th>Оценка</th>
+                <th>Семестр</th>
+                <th>Преподаватель</th>
+                @if (User.Identity.IsAuthenticated && !User.IsInRole("student"))
+                {
+                    <th>Действия</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var exam in Model.Marks)
+            {
+                <tr>
+                    <td>@exam.SubjectName</td>
+                    <td>@exam.DateSubjectPassing.ToShortDateString()</td>
+                    <td>@exam.Type</td>
+                    @if (exam.Type == SubjectTypeViewModel.Exam)
+                    {
+                        var examMark = exam as ExamMarkViewModel;
+                        <td>@examMark.Mark</td>
+                    }
+                    else
+                    {
+                        var testMark = exam as TestMarkViewModel;
+                        if (testMark.IsPassed)
+                        {
+                            <td>Зачет</td>
+                        }
+                        else
+                        {
+                            <td>Незачет</td>
+                        }
+                    }
+                    <td>@exam.SemesterNumber</td>
+                    <td>@exam.Teacher.Abbr</td>
+                    @if (User.Identity.IsAuthenticated && !User.IsInRole("student"))
+                    {
+                        <td>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <form action="/Mark/Edit" method="get">
+                                        <input type="hidden" name="id" value="@exam.Id" />
+                                        <input type="hidden" name="returnUrl" value="@Request.Url" />
+                                        <button class="btn btn-default glyphicon glyphicon-refresh"></button>
+                                    </form>
+                                </div>
+                                <div class="col-md-3">
+                                    <form action="/Mark/Delete" method="post">
+                                        <input type="hidden" name="id" value="@exam.Id" />
+                                        <input type="hidden" name="returnUrl" value="@Request.Url" />
+                                        <button class="btn btn-default glyphicon glyphicon-remove"></button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+    <br />
+    @if (User.IsInRole("teacher"))
+    {
+        <div class="row">
+            <div class="col-md-2">
+                @using (Html.BeginForm("Create", "Mark", FormMethod.Get))
+                {
+                    @Html.Hidden("idStudent", Model.Id);
+                    @Html.Hidden("type", StudentsApp.BLL.DTO.SubjectTypeDTO.Exam)
+                    @Html.Hidden("returnUrl", Request.Url)
+                    <input class="btn btn-primary" type="submit" value="Добавить оценку" />
+                }
+            </div>
+            <div class="col-md-2">
+                @using (Html.BeginForm("Create", "Mark", FormMethod.Get))
+                {
+                    @Html.Hidden("idStudent", Model.Id);
+                    @Html.Hidden("type", StudentsApp.BLL.DTO.SubjectTypeDTO.Test)
+                    @Html.Hidden("returnUrl", Request.Url)
+                    <input class="btn btn-primary" type="submit" value="Добавить зачет" />
+                }
+            </div>
+        </div>
+    }
+</div>

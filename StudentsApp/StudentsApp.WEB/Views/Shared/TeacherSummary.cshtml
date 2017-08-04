@@ -1,0 +1,13 @@
+﻿@model StudentsApp.WEB.Models.Entities.TeacherViewModel
+
+<tr class="well">
+    <td>
+        @using (Html.BeginForm("Details", "Teacher", FormMethod.Get))
+        {
+            @Html.HiddenFor(s => s.Id)
+            <button class="btn btn-link">@Model.Abbr</button>
+        }
+    </td>
+    <td>@Model.Email</td>
+    <td>@Model.CountStudents</td>
+</tr>

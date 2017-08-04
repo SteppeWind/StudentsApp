@@ -1,0 +1,67 @@
+﻿@model StudentsApp.WEB.Models.Entities.ComplexEntities.ComplexFaculty
+
+@{
+    ViewBag.Title = "GetFaculty";
+}
+
+<h1>@Model.FacultyName</h1>
+<br />
+
+@if (Model.Dean != null)
+{
+    <h3>Действующий декан - @Model.Dean.Surname @Model.Dean.Name @Model.Dean.MiddleName</h3>
+    <h4>Email - @Model.Dean.Email</h4>
+}
+else
+{
+    <h3>Декан временно не назначен</h3>
+}
+<br />
+<h3>Группы на факультете</h3>
+<div class="well">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Название</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.ListGroups)
+            {
+                <tr>
+                    <td>@item.GroupName</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+<br />
+<h3>История факультета</h3>
+<div class="well">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Декан</th>
+                <th>Дата начала управления</th>
+                <th>Дата конца управления</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.ListHistoryFaculties)
+            {
+                <tr>
+                    <td>@item.Dean.Abbr</td>
+                    <td>@item.StartManage.ToShortDateString()</td>
+                    @if(item.EndManage == null)
+                    {
+                        <td>В настоящее время является деканом</td>
+                    }
+                    else
+                    {
+                        <td>@item.EndManage.Value.ToShortDateString()</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

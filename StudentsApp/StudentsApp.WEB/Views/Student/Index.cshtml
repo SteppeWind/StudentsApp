@@ -1,0 +1,38 @@
+﻿@model PagedList.IPagedList<StudentsApp.WEB.Models.Entities.StudentViewModel>
+@using PagedList.Mvc;
+
+@{
+    ViewBag.Title = "Список студентов";
+}
+
+@if (User.Identity.IsAuthenticated && !User.IsInRole("student"))
+{
+    <div class="panel-footer">
+        @using (Html.BeginForm("Create", "Student", FormMethod.Get))
+        {
+            <button class="btn btn-default">Зарегистрировать студента</button>
+        }
+    </div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>ФИО</th>
+            <th>Email</th>
+            <th>Средний балл</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                @Html.Partial("StudentSummary", item)
+            </tr>
+        }
+    </tbody>
+</table>
+
+<br />
+Сраница @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) из @Model.PageCount
+@Html.PagedListPager(Model, page => Url.Action("Index", new { page }))

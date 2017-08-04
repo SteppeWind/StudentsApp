@@ -1,0 +1,10 @@
+﻿@model StudentsApp.WEB.Models.Entities.FacultyViewModel
+<div class="well label-default">
+    <span class="lead">@Model.FacultyName</span>
+    @using (Html.BeginForm("Details", "Faculty", FormMethod.Get))
+    {
+        @Html.HiddenFor(f => f.Id);
+        <input class="btn btn-primary btn-sm" type="submit" value="Подробнее" />
+    }
+</div>
+<br />
