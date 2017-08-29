@@ -1,10 +1,24 @@
 ﻿@model StudentsApp.WEB.Models.Entities.ComplexEntities.ComplexTeacher
-
 @{
     ViewBag.Title = "GetTeacher";
+    bool checkIfMoreDean = User.IsInRole("dean") || User.IsInRole("admin");
 }
 
-<h2>@Model.FullName</h2>
+<br />
+<div class="well">
+    <h3>@Model.FullName</h3>
+    <h4>@Model.Email</h4>
+    <h4>Количество студентов - @Model.CountStudents</h4>
+    @if (checkIfMoreDean)
+    {
+        using (Html.BeginForm("Edit", "Account", FormMethod.Get))
+        {
+            @Html.Hidden("idPerson", Model.Id)
+            @Html.Hidden("returnUrl", Request.Url.PathAndQuery)
+            <input type="submit" class="btn btn-warning" value="Редактировать профиль" />
+        }
+    }
+</div>
 
 <div class="well">
     <h3>Степени</h3>
@@ -34,105 +48,95 @@
             <tr>
                 <th>Название</th>
                 <th>Факультет</th>
-                @if (User.IsInRole("dean") || User.IsInRole("admin"))
+                @if (checkIfMoreDean)
                 {
                     <th>Действия</th>
                 }
             </tr>
         </thead>
         <tbody>
-            @foreach (var subject in Model.Subjects)
+            @foreach (var subject in Model.TeacherSubjects)
             {
                 <tr>
-                    <td>@subject.SubjectName</td>
-                    <td>@subject.FacultyName</td>
-                    @if (User.IsInRole("dean") || User.IsInRole("admin"))
+                    @if (checkIfMoreDean)
+                    {                        
+                        @Html.Action("Delete", "TeacherSubject", new { id = subject.Id })
+                    }
+                    else
                     {
-                        <td>
-                            @using (Html.BeginForm("DeleteSubjectFromTeacher", "Dean", FormMethod.Post))
-                            {
-                                @Html.Hidden("idFaculty", subject.FacultyId)
-                                @Html.Hidden("idTeacher", Model.Id)
-                                @Html.Hidden("idSubject", subject.Id)
-                                @Html.Hidden("returnUrl", Request.Url.PathAndQuery)
-                                <button class="btn btn-default glyphicon glyphicon-remove"></button>
-                            }
-                        </td>
+                        @Html.Action("Details", "TeacherSubject", new { id = subject.Id })
                     }
                 </tr>
             }
         </tbody>
     </table>
-    @using (Html.BeginForm("AddSubjectToTeacher", "Dean", FormMethod.Get))
+    @if (checkIfMoreDean)
     {
-        @Html.Hidden("idTeacher", Model.Id)
-        @Html.Hidden("returnUrl", Request.Url.PathAndQuery)
-        <input type="submit" class="btn btn-primary" value="Добавить дисциплину" />
+        using (Html.BeginForm("Create", "TeacherSubject", FormMethod.Get))
+        {
+            @Html.Hidden("idTeacher", Model.Id)
+            @Html.Hidden("returnUrl", Request.Url.PathAndQuery)
+            <input type="submit" class="btn btn-primary" value="Добавить дисциплину" />
+        }
     }
 </div>
 <br />
 <div class="well">
     <h3>Студенты, посещающие данного преподавателя</h3>
-    <div class="panel-group" id="accordion">
-        @foreach (var studentSubject in Model.StudentsSubjects)
-        {
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h4 class="panel-title">
-                        <a data-toggle="collapse" data-parent="#accordion" href="#@studentSubject.Id">@studentSubject.SubjectName</a>
-                    </h4>
-                </div>
-                <div id="@studentSubject.Id" class="panel-collapse collapse in">
-                    <div class="panel-body">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Имя</th>
-                                    <th>Средний балл</th>
-                                    @if (User.IsInRole("dean") || User.IsInRole("admin"))
-                                    {
-                                        <th>Действия</th>
-                                    }
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var student in studentSubject.Students)
-                                {
-                                    <tr>
-                                        <td>
-                                            <form action="/Student/Details" method="get">
-                                                <input type="hidden" name="id" value="@student.Id"/>
-                                                <input type="submit" value="@student.Abbr" class="btn btn-link" />
-                                            </form>
-                                        </td>
-                                        <td>@student.AverageMark</td>
-                                        @if (User.IsInRole("dean") || User.IsInRole("admin"))
-                                        {
-                                            <td>
-                                                @using (Html.BeginForm("DeleteStudentFromTeacher", "Dean", FormMethod.Post))
-                                                {
-                                                    @Html.Hidden("idFaculty", studentSubject.FacultyId)
-                                                    @Html.Hidden("idStudent", student.Id)
-                                                    @Html.Hidden("idSubject", studentSubject.Id)
-                                                    @Html.Hidden("returnUrl", Request.Url.PathAndQuery)
-                                                    <button class="btn btn-default glyphicon glyphicon-remove"></button>
-                                                }
-                                            </td>
-                                        }
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Имя</th>
+                <th>Предмет</th>
+                <th>Факультет</th>
+                @if (checkIfMoreDean)
+                {
+                    <th>Действия</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var ss in Model.StudentsSubjects)
+            {
+                <tr>
+                    <td>@Html.ActionLink(ss.FullStudentName, "Details", "Student", new { id = ss.StudentId }, null)</td>
+                    @if (checkIfMoreDean)
+                    {
+                        @Html.Action("Delete", "StudentSubject", new { id = ss.Id });
+                    }
+                    else
+                    {
+                        @Html.Action("Details", "StudentSubject", new { id = ss.Id });
+                    }                   
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @*@for (int i = 0; i < Model.GroupedStudentsSubjects.Count(); i++)
+    {
+        var studentSubject = Model.GroupedStudentsSubjects.ElementAt(i);
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a data-toggle="collapse" data-parent="#accordion" href="#@i">@studentSubject.Key</a>
+                </h4>
+            </div>
+            <div id="@i" class="panel-collapse collapse in">
+                <div class="panel-body">
+                 
                 </div>
             </div>
             <br />
-        }
-    </div>
-    @using (Html.BeginForm("AddStudentToTeacher", "Dean", FormMethod.Get))
+        </div>
+    }*@
+    @if (checkIfMoreDean)
     {
-        @Html.Hidden("idTeacher", Model.Id)
-        @Html.Hidden("returnUrl", Request.Url.PathAndQuery)
-        <input type="submit" class="btn btn-primary" value="Добавить студентов" />
+        using (Html.BeginForm("Create", "StudentSubject", FormMethod.Get))
+        {
+            @Html.Hidden("idTeacher", Model.Id)
+            @Html.Hidden("returnUrl", Request.Url.PathAndQuery)
+            <input type="submit" class="btn btn-primary" value="Добавить студентов" />
+        }
     }
 </div>

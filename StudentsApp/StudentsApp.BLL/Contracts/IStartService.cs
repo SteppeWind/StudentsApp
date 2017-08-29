@@ -8,6 +8,8 @@ namespace StudentsApp.BLL.Contracts
 {
     public interface IStartService
     {
-        void FillData();
+        bool IsExistDB { get; }
+        void ClearData();
+        Task FillDataAsync();
     }
 }

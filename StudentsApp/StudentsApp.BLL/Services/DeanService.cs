@@ -17,14 +17,14 @@ namespace StudentsApp.BLL.Services
     /// </summary>
     public class DeanService : PersonService<DeanDTO, Dean>, IDeanService
     {
-        public DeanService(IUnitOfWork uow, IIndentityUnitOfWork iouw) : base(uow, iouw) { }
+        public DeanService(IUnitOfWork uow) : base(uow) { }
 
         /// <summary>
         /// Return dean from id
         /// </summary>
         /// <param name="id">Unique number of dean</param>
         /// <returns>If dean is null, than throw ValidationException, else return dean</returns>
-        private Dean GetDeanIfExist(int id)
+        private Dean GetDeanIfExist(string id)
         {
             var dean = DataBase.DeanRepository[id];
 
@@ -40,8 +40,8 @@ namespace StudentsApp.BLL.Services
         /// Return faculty from id
         /// </summary>
         /// <param name="id">Unique number of faculty</param>
-        /// <returns>If faculty is null, than throw ValidationException, else return faculty</returns>
-        private Faculty GetFacultyIfExist(int id)
+        /// <returns>If faculty is null, than throw ValidationException, else - faculty</returns>
+        private Faculty GetFacultyIfExist(string id)
         {
             var faculty = DataBase.FacultyRepository[id];
 
@@ -83,69 +83,58 @@ namespace StudentsApp.BLL.Services
             }
         }
 
+        public int Count => DataBase.DeanRepository.Count;
+
         /// <summary>
         /// Add dean to DB
         /// </summary>
         /// <param name="entity">Added entity</param>
-        public void Add(DeanDTO entity)
+        /// <returns></returns>
+        public async Task<OperationDetails> AddAsync(DeanDTO entity)
         {
+            OperationDetails answer = null;
             bool isExist = PersonIsExist(entity);//check if exist
 
             if (!isExist)//if not exist that add dean to DB
             {
-                var dean = ReverseConvert(entity);//convert
-
+                var dean = await Create<DAL.Entities.Profile>(entity);
                 DataBase.DeanRepository.Add(dean);
-                Create(entity);//add dean to IndentityDB
-                DataBase.Save();//save result
+                await DataBase.SaveAsync();//save result
+
+                await DataBase.ProfileManager.AddToRoleAsync(dean.Id, "dean");
+                await DataBase.SaveAsync();//save result
+
+                answer = new OperationDetails(true, $"Декан {entity.FullName} успешно зарегистрирован");
             }
             else
             {
-                throw new PersonIsExistException(entity);
+                answer = new OperationDetails(false, $"Декан с email {entity.Email} уже существует");
             }
-        }
 
-
-        /// <summary>
-        /// Add faculty to dean
-        /// </summary>
-        /// <param name="idDean">Id dean</param>
-        /// <param name="idFaculty">Id faculty</param>
-        public void AddFaculty(int idDean, int idFaculty)//*
-        {
-            var dean = GetDeanIfExist(idDean);//find dean
-            var faculty = GetFacultyIfExist(idFaculty);//find faculty
-
-            DataBase.DeanRepository.AddFaculty(dean, faculty.Id);
-            DataBase.Save();
-        }
-
-
-        /// <summary>
-        /// Remove faculty from dean
-        /// </summary>
-        /// <param name="idDean">Id dean</param>
-        /// <param name="idFaculty">Id faculty</param>
-        public void RemoveFaculty(int idDean, int idFaculty)
-        {
-            var dean = GetDeanIfExist(idDean);//find dean
-            var faculty = GetFacultyIfExist(idFaculty);//find faculty
-
-            DataBase.DeanRepository.RemoveFaculty(dean, faculty.Id);
-            DataBase.Save();
+            return answer;
         }
 
         /// <summary>
         /// Full delete from DB
         /// </summary>
         /// <param name="id">Id dean</param>
-        public void FullRemove(int id)
+        /// <returns></returns>
+        public OperationDetails FullRemove(string id)
         {
-            var dean = GetDeanIfExist(id);//find dean
-
-            DataBase.DeanRepository.FullRemove(dean);//call full remove dean
-            Delete(dean);//delete entry from IdentityDB
-            DataBase.Save();
+            OperationDetails answer = null;
+            try
+            {
+                var dean = GetDeanIfExist(id);//find dean
+                DataBase.DeanRepository.FullRemove(dean);//call full remove dean
+                DataBase.Save();
+                answer = new OperationDetails(true, $"Декан {dean.Profile.ToString()} полностью удален из базы");
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
+            }
+           
+            return answer;
         }
 
         /// <summary>
@@ -153,7 +142,7 @@ namespace StudentsApp.BLL.Services
         /// </summary>
         /// <param name="id">Id dean</param>
         /// <returns>Return dean, if he is exist in DB, else throw ValidationException</returns>
-        public DeanDTO Get(int id)
+        public DeanDTO Get(string id)
         {
             var dean = GetDeanIfExist(id);
 
@@ -164,26 +153,59 @@ namespace StudentsApp.BLL.Services
         /// Change value IsDelete to false for dean
         /// </summary>
         /// <param name="id">Id dean</param>
-        public void Remove(int id)
+        /// <returns></returns>
+        public OperationDetails Remove(string id)
         {
-            var dean = GetDeanIfExist(id);//find dean
+            OperationDetails answer = null;
+            try
+            {
+                var dean = GetDeanIfExist(id);//find dean
 
-            DataBase.DeanRepository.Remove(dean);//call remove dean
-            DataBase.Save();
+                DataBase.DeanRepository.Remove(dean);//call remove dean
+                DataBase.Save();
+
+                answer = new OperationDetails(true, $"Декан по email {dean.Profile.Email} помечен как 'Удалён'");
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
+            }
+
+            return answer;
         }
 
         /// <summary>
         /// Update dean
         /// </summary>
         /// <param name="entity"></param>
-        public void Update(DeanDTO entity)
+        /// <returns></returns>
+        public async Task<OperationDetails> UpdateAsync(DeanDTO entity)
         {
-            var dean = GetDeanIfExist(entity.Id);
-            var profile = dean.Profile;
+            OperationDetails answer = null;
 
-            UpdatePerson(entity, profile);//update user profile
-            DataBase.ProfileRepository.Update(profile);//call update in DB
-            DataBase.Save();
+            try
+            {
+                if (PersonIsExist(entity))
+                {
+                    answer = new OperationDetails(false, $"Декан с email {entity.Email} уже существует");
+                }
+                else
+                {
+                    var dean = GetDeanIfExist(entity.Id);
+                    var profile = dean.Profile;
+
+                    UpdatePerson(entity, profile);//update user profile
+                    await DataBase.ProfileManager.UpdateAsync(profile);//call update in DB
+                    await DataBase.SaveAsync();                   
+                    answer = new OperationDetails(true, $"Профиль успешно обновлен");
+                }
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
+            }
+           
+            return answer;
         }
 
         public Task<DeanDTO> GetByEmailAsync(string email)
@@ -204,6 +226,14 @@ namespace StudentsApp.BLL.Services
         public Task<IEnumerable<DeanDTO>> GetBySurnameAsync(string surname)
         {
             return ConvertAsync(DataBase.DeanRepository.GetBySurname(surname));
+        }
+
+        public IEnumerable<DeanDTO> GetDeansInFaculty(string facultyId)
+        {
+            return Convert(DataBase.DeanRepository
+                .Find(d => d.ListDeanFaculties
+                                .Select(df => df.FacultyId)
+                                .Contains(facultyId)));
         }
     }
 }

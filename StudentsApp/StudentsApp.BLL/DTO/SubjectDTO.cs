@@ -10,18 +10,18 @@ namespace StudentsApp.BLL.DTO
     {
         public string SubjectName { get; set; }
         
-        public int FacultyId { get; set; }
+        public string FacultyId { get; set; }
 
         public string FacultyName { get; set; }
 
-        public IEnumerable<int> ListIdStudents { get; set; }
+        public IEnumerable<string> ListIdStudents { get; set; }
 
-        public IEnumerable<int> ListIdTeachers { get; set; }
+        public IEnumerable<string> ListIdTeachers { get; set; }
 
         public SubjectDTO()
         {
-            ListIdStudents = new List<int>();
-            ListIdTeachers = new List<int>();
+            ListIdStudents = new List<string>();
+            ListIdTeachers = new List<string>();
         }
     }
 }

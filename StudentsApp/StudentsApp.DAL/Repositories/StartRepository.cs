@@ -11,22 +11,22 @@ namespace StudentsApp.DAL.Repositories
     public class StartRepository : IStartRepository
     {
         StudentsAppContext studentsContext;
-        IdentityContext identityContext;
 
         public StartRepository()
         {
             studentsContext = StudentsAppContext.StudentsContext;
-            identityContext = IdentityContext.IdentityUserContext;
+        }
+
+        public bool IsExistDB => studentsContext.Database.Exists();
+
+        public void ClearDB()
+        {
+            studentsContext.Database.Delete();
         }
 
         public void FillDataDB()
         {
             studentsContext.FillData();
-        }
-
-        public void FillDataIdentityDB()
-        {
-
         }
     }
 }

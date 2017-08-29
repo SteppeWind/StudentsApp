@@ -10,19 +10,19 @@ namespace StudentsApp.BLL.DTO
     {
         //здесь пиздец
 
-        public IEnumerable<int> ListIdGroups { get; set; }
+        public IEnumerable<string> ListIdGroups { get; set; }
 
-        public IEnumerable<int> ListIdSubjects { get; set; }
+        public IEnumerable<string> ListIdSubjects { get; set; }
 
-        public IEnumerable<int> ListIdMarks { get; set; }
+        public IEnumerable<string> ListIdMarks { get; set; }
 
         public double AverageMark { get; set; }
 
         public StudentDTO()
         {
-            ListIdGroups = new List<int>();
-            ListIdSubjects = new List<int>();
-            ListIdMarks = new List<int>();
+            ListIdGroups = new List<string>();
+            ListIdSubjects = new List<string>();
+            ListIdMarks = new List<string>();
             Role = "student";
         }
     }

@@ -8,12 +8,12 @@ namespace StudentsApp.DAL.Entities
 {
     public class DeanFaculty : BaseEntity
     {
-        public int FacultyId { get; set; }
+        public string FacultyId { get; set; }
 
         public virtual Faculty Faculty { get; set; }
 
         
-        public int DeanId { get; set; }
+        public string DeanId { get; set; }
 
         public virtual Dean Dean { get; set; }
 

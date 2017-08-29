@@ -13,10 +13,10 @@ namespace StudentsApp.DAL.Entities
         public virtual ICollection<TeacherFaculty> ListTeacherFaculty { get; set; }
 
 
-        public virtual ICollection<VisitSubject> ListVisitSubjects { get; set; }
+        public virtual ICollection<StudentSubject> ListStudents { get; set; }
 
 
-        public virtual ICollection<Subject> ListSubjects { get; set; }
+        public virtual ICollection<TeacherSubject> ListSubjects { get; set; }
 
 
         public virtual ICollection<Mark> ListMarks { get; set; }
@@ -24,7 +24,7 @@ namespace StudentsApp.DAL.Entities
         public Teacher()
         {
             ListTeacherFaculty = new List<TeacherFaculty>();
-            ListSubjects = new List<Subject>();
+            ListSubjects = new List<TeacherSubject>();
             ListMarks = new List<Mark>();
         }
     }

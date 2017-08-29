@@ -7,7 +7,7 @@ namespace StudentsApp.WEB.Models.Entities
 {
     public class HistoryFacultyViewModel : BaseViewModel
     {
-        public int FacultyId { get; set; }
+        public string FacultyId { get; set; }
 
         public PersonViewModel Dean { get; set; }
 

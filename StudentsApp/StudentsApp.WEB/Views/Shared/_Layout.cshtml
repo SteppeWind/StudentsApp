@@ -30,15 +30,20 @@
         </div>
     </div>
     <div class="container body-content">
-        @if (TempData["message"] != null)
-        {
-            <div class="alert alert-success">@TempData["message"]</div>
+        @{
+            var tempDataMessage = TempData["message"];
+            if (tempDataMessage != null && $"{tempDataMessage}" != "")
+            {
+                <div class="alert alert-success">@Html.Raw(tempDataMessage)</div>
+            }
+
+            var tempDataErrorMessage = TempData["errorMessage"];
+            if (tempDataErrorMessage != null && $"{tempDataErrorMessage}" != "")
+            {
+                <div class="alert alert-warning">@Html.Raw(tempDataErrorMessage)</div>
+            }
         }
 
-        @if (TempData["errorMessage"] != null)
-        {
-            <div class="alert alert-warning">@TempData["errorMessage"]</div>
-        }
         @RenderBody()
         <hr />
         <footer>

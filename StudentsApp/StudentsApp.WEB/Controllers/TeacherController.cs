@@ -12,9 +12,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using Microsoft.AspNet.Identity;
 
 namespace StudentsApp.WEB.Controllers
 {
+    [Authorize]
     public class TeacherController : Controller
     {
         ITeacherService TeacherService;
@@ -23,6 +25,9 @@ namespace StudentsApp.WEB.Controllers
         IDeanService DeanService;
         ITeacherPostService TeacherPostService;
         IFacultyService FacultyService;
+        ITeacherFacultyService TeacherFacultyService;
+        ITeacherSubjectService TeacherSubjectService;
+        IStudentSubjectService StudentSubjectService;
 
         public TeacherController(
             ITeacherService teacherService,
@@ -30,7 +35,10 @@ namespace StudentsApp.WEB.Controllers
             IStudentService studentService,
             IDeanService deanService,
             ITeacherPostService teacherPostService,
-            IFacultyService facultyService)
+            IFacultyService facultyService,
+            IStudentSubjectService studentSubjectService,
+            ITeacherSubjectService teacherSubjectService,
+            ITeacherFacultyService teacherFacultyService)
         {
             SubjectService = subjectService;
             StudentService = studentService;
@@ -38,6 +46,9 @@ namespace StudentsApp.WEB.Controllers
             TeacherPostService = teacherPostService;
             FacultyService = facultyService;
             DeanService = deanService;
+            TeacherFacultyService = teacherFacultyService;
+            TeacherSubjectService = teacherSubjectService;
+            StudentSubjectService = studentSubjectService;
         }
 
         int pageSize = 10;
@@ -47,7 +58,7 @@ namespace StudentsApp.WEB.Controllers
         {
             int pageNumber = (page ?? 1);
 
-            var teachersDTO = TeacherService.GetAll.ToList();
+            var teachersDTO = TeacherService.GetAll;
 
             var teachersVM = BaseViewModel.UniversalConvert<TeacherDTO, TeacherViewModel>(teachersDTO).ToList();
 
@@ -55,40 +66,33 @@ namespace StudentsApp.WEB.Controllers
         }
 
         [HttpGet]
-        [Authorize]
-        public ActionResult Details(int id = 3)
+        public ActionResult Details(string id)
         {
             ComplexTeacher teacherVM = new ComplexTeacher();
 
-            var teacherDTO = TeacherService.Get(id);
-            var postsDTO = TeacherService.GetPosts(id);
-            var subjectsDTO = SubjectService.GetAll.Where(s => s.ListIdTeachers.Contains(id)).ToList();
-
-            teacherVM = BaseViewModel.UniversalConvert<TeacherDTO, ComplexTeacher>(teacherDTO);
-            teacherVM.Subjects = BaseViewModel.UniversalConvert<SubjectDTO, SubjectViewModel>(subjectsDTO).ToList();
-            teacherVM.Posts = BaseViewModel.UniversalConvert<TeacherFacultyDTO, TeacherFacultyVIewModel>(postsDTO).ToList();
-           
-            foreach (var item in subjectsDTO)
+            try
             {
-                var ss = BaseViewModel.UniversalConvert<SubjectDTO, SubjectWithStudents>(item);
-                //search students whose subjects id`s intersect with teacher of subjects id`s 
-                var studentsDTO = StudentService.GetStudents(item.Id, teacherDTO.Id);
-               
-                ss.Students.AddRange(BaseViewModel.UniversalConvert<StudentDTO, StudentViewModel>(studentsDTO));
-                teacherVM.StudentsSubjects.Add(ss);
+                var teacherDTO = TeacherService.Get(id);
+                var postsDTO = TeacherFacultyService.GetTeacherPosts(id);
+                var teacherSubjectsDTO = TeacherSubjectService.GetTeacherSubjects(id);
+                var studentSubjectsDTO = StudentSubjectService.GetStudentSubjectsByTeacherId(id);
+
+                teacherVM = BaseViewModel.UniversalConvert<TeacherDTO, ComplexTeacher>(teacherDTO);
+                teacherVM.TeacherSubjects = BaseViewModel.UniversalConvert<TeacherSubjectDTO, TeacherSubjectViewModel>(teacherSubjectsDTO).ToList();
+                teacherVM.Posts = BaseViewModel.UniversalConvert<TeacherFacultyDTO, TeacherFacultyVIewModel>(postsDTO).ToList();
+                teacherVM.StudentsSubjects = BaseViewModel.UniversalConvert<StudentSubjectDTO, ComplexStudentSubject>(studentSubjectsDTO).ToList();
+
+                foreach (var item in teacherVM.StudentsSubjects)
+                {
+                    item.Student = BaseViewModel.UniversalConvert<StudentDTO, StudentViewModel>(StudentService.Get(item.StudentId));
+                }
             }
-
-
+            catch (Exception ex)
+            {
+                TempData["errorMessage"] = ex.Message;
+            }
+            
             return View(teacherVM);
-        }
-
-
-        [HttpGet]
-        [Authorize]
-        private async Task<ActionResult> Details(string email)
-        {
-            var teacher = await TeacherService.GetByEmailAsync(email);
-            return View("Details", teacher.Id);
         }
 
         [HttpGet]
@@ -96,7 +100,7 @@ namespace StudentsApp.WEB.Controllers
         public async Task<ActionResult> Create()
         {
             RegisterTeacher teacherVM = new RegisterTeacher();
-            
+
             if (User.IsInRole("dean"))
             {
                 var dean = await DeanService.GetByEmailAsync(User.Identity.Name);
@@ -108,7 +112,7 @@ namespace StudentsApp.WEB.Controllers
 
             foreach (var item in teacherVM.GroupSubjects)
             {
-                teacherVM.SelectedIdPosts.Add(0);
+                teacherVM.SelectedIdPosts.Add("");
             }
 
             return View(teacherVM);
@@ -116,67 +120,118 @@ namespace StudentsApp.WEB.Controllers
 
         [HttpPost]
         [Authorize(Roles = "dean, admin")]
-        public ActionResult Create(RegisterTeacher teacher)
+        public async Task<ActionResult> Create(RegisterTeacher teacher)
         {
             if (ModelState.IsValid)
             {
-                try
+                if (!teacher.SelectedIdSubjects.Any())
                 {
-                    TeacherDTO teacherDTO = new TeacherDTO()
+                    TempData["errorMessage"] = "Вы не выбрали ни одного предмета";
+
+                    FillCreateModel(teacher);
+                    return View(teacher);
+                }
+
+                TeacherDTO teacherDTO = new TeacherDTO()
+                {
+                    Email = teacher.Email,
+                    Name = teacher.Name,
+                    Surname = teacher.Surname,
+                    MiddleName = teacher.MiddleName,
+                    Password = teacher.Password
+                };
+                var result = await TeacherService.AddAsync(teacherDTO);
+                string message = result.Message + "<br>";
+
+                if (result.Succedeed)
+                {
+                    TempData["message"] += message;
+
+                    var results = await TeacherSubjectService
+                        .AddByTeacherEmail(teacher.Email, teacher.SelectedIdSubjects
+                        .Select(s => new TeacherSubjectDTO() { SubjectId = s }));
+                    foreach (var item in results)
                     {
-                        Email = teacher.Email,
-                        Name = teacher.Name,
-                        Surname = teacher.Surname,
-                        MiddleName = teacher.MiddleName,
-                        Password = teacher.Password
-                    };
-                    TeacherService.Add(teacherDTO);
-
-                    var subjectsId = teacher.SelectedIdSubjects.Select(s => Convert.ToInt32(s)).ToList();
-
-                    TeacherService.AddSubject(subjectsId, teacher.Email);
-
-                    for (int i = 0; i < FacultyService.GetAll.Count(); i++)
-                    {
-                        var faculty = FacultyService.GetAll.ElementAt(i);
-                        if (faculty.ListIdSubjects.Intersect(subjectsId).Any())
+                        message = item.Message + "<br>";
+                        if (item.Succedeed)
                         {
-                            TeacherService.AddTeacherPost(teacher.Email, faculty.Id, teacher.SelectedIdPosts.First());
+                            TempData["message"] += message;
+                        }
+                        else
+                        {
+                            TempData["errorMessage"] += message;
                         }
                     }
 
-                    return Redirect($@"Details/{TeacherService.GetAll.Last().Id}");
+                    int count = FacultyService.Count;
+
+                    for (int i = 0; i < count; i++)
+                    {
+                        var faculty = FacultyService.GetAll.ElementAt(i);
+                        if (faculty.ListIdSubjects.Intersect(teacher.SelectedIdSubjects).Any())
+                        {
+                            string postIndex = "";
+                            if (teacher.SelectedIdPosts.Count == 1)
+                            {
+                                postIndex = teacher.SelectedIdPosts.First();
+                            }
+                            else
+                            {
+                                postIndex = teacher.SelectedIdPosts[i];
+                            }
+
+                            result = await TeacherFacultyService.AddByTeacherEmail(teacher.Email, new TeacherFacultyDTO()
+                            {
+                                FacultyId = faculty.Id,
+                                PostTeacherId = postIndex
+                            });
+
+                            message = result.Message + "<br>";
+                            if (result.Succedeed)
+                            {
+                                TempData["message"] += message;
+                            }
+                            else
+                            {
+                                TempData["errorMessage"] += message;
+                            }
+                        }
+                    }
                 }
-                catch (PersonIsExistException ex)
+                else
                 {
-                    TempData["message"] = ex.Message;
-                }
-                catch (ValidationException ex)
-                {
-                    TempData["message"] = ex.Message;
+                    TempData["errorMessage"] += message;
+
+                    FillCreateModel(teacher);
+                    return View(teacher);
                 }
 
+                return Redirect($@"Details/{(await TeacherService.GetByEmailAsync(teacher.Email)).Id}");
             }
 
-            teacher.Subjects = GetSubjects(teacher.FacultyId);
-            teacher.Posts = new SelectList(GetAllPosts, "Id", "NamePostTeacher");
-
+            FillCreateModel(teacher);
             return View(teacher);
         }
 
 
-        [HttpGet]
-        public ActionResult AddSubjectToStudent(int idStudent, string returnUrl)
+        private void FillCreateModel(RegisterTeacher teacher)
         {
-            var model = new AddSubjectToStudentViewModel() { StudentId = idStudent };
+            teacher.Subjects = GetSubjects(teacher.FacultyId);
+            teacher.Posts = new SelectList(GetAllPosts, "Id", "NamePostTeacher");
+        }
+
+        [HttpGet]
+        public ActionResult AddSubjectToStudent(string idStudent, string returnUrl)
+        {
+            var model = new AddSubjectToStudentViewModel();
             try
             {
-                var teacherDTO = TeacherService.GetByEmailAsync(User.Identity.Name).Result;
+                var teacherDTO = TeacherService.Get(User.Identity.GetUserId());
                 var studentDTO = StudentService.Get(idStudent);
                 var facultiesDTO = FacultyService.GetAll.Where(f => teacherDTO.ListIdFaculties.Contains(f.Id));
 
+                model.StudentId = idStudent;
                 bool check = false;
-
 
                 foreach (var item in facultiesDTO)
                 {
@@ -189,8 +244,8 @@ namespace StudentsApp.WEB.Controllers
 
                 if (check)
                 {
-                    IEnumerable<int> listSubjects = StudentService.Get(idStudent).ListIdSubjects;
-                    var subjectsVM = GetAllSubjects.Where(s => teacherDTO.ListIdSubjects.Except(listSubjects).Contains(s.Id));
+                    IEnumerable<string> listSubjects = teacherDTO.ListIdSubjects;
+                    var subjectsVM = GetTeacherSubjects(teacherDTO.Id);
                     model.ListSubjects = new SelectList(subjectsVM, "Id", "SubjectName");
                     model.TeacherId = teacherDTO.Id;
                 }
@@ -205,36 +260,32 @@ namespace StudentsApp.WEB.Controllers
                 TempData["errorMessage"] = ex.Message;
                 return Redirect(returnUrl);
             }
-                       
+
             return View(model);
         }
 
         [HttpPost]
-        public ActionResult AddSubjectToStudent(AddSubjectToStudentViewModel model, string returnUrl)
+        public async Task<ActionResult> AddSubjectToStudent(AddSubjectToStudentViewModel model, string returnUrl)
         {
-            if (model.ListIdSubjects.Count == 0)
-            {
-                TempData["errorMessage"] = "Вы не выбрали ни одного предмета";
-            }
-            else
-            {
-                try
-                {
-                    foreach (var item in model.ListIdSubjects)
-                    {
-                        StudentService.AddSubject(model.StudentId, int.Parse(item), model.TeacherId);
-                    }
+            string message = string.Empty;
 
-                    TempData["message"] = "Изменения были сохранены";
-                    return Redirect(returnUrl);
-                }
-                catch (ValidationException ex)
+            foreach (var item in model.ListIdSubjects)
+            {
+                var result = await StudentSubjectService.AddAsync(new StudentSubjectDTO()
                 {
-                    TempData["errorMessage"] = ex.Message;
-                }
-                catch(PersonNotFoundException ex)
+                    StudentId = model.StudentId,
+                    SubjectId = item,
+                    TeacherId = model.TeacherId
+                });
+
+                message = result.Message + "<br>";
+                if (result.Succedeed)
                 {
-                    TempData["errorMessage"] = ex.Message;
+                    TempData["message"] += message;
+                }
+                else
+                {
+                    TempData["errorMessage"] += message;
                 }
             }
 
@@ -242,43 +293,13 @@ namespace StudentsApp.WEB.Controllers
             return Redirect(returnUrl);
         }
 
-        [HttpPost]
-        public async Task<ActionResult> RemoveSubjectFromStudent(int idStudent, int idSubject, string returnUrl)
-        {           
-            try
-            {
-                var teacherDTO = await TeacherService.GetByEmailAsync(User.Identity.Name);
-
-                if (teacherDTO.ListIdSubjects.Contains(idSubject))
-                {
-                    StudentService.RemoveSubject(idStudent, idSubject);
-                    TempData["message"] = "Изменения были сохранены";
-                }
-                else
-                {
-                    TempData["errorMessage"] = "У вас нет прав редактировать данный предмет";
-                    return Redirect(returnUrl);
-                }
-            }
-            catch (PersonNotFoundException ex)
-            {
-                TempData["errorMessage"] = ex.Message;
-            }
-            catch (ValidationException ex)
-            {
-                TempData["errorMessage"] = "Изменения не сохранены";
-            }
-            
-            return Redirect(returnUrl);
-        }
-
-        public List<SubjectViewModel> GetTeacherSubjects(int teacherId)
+        public List<SubjectViewModel> GetTeacherSubjects(string teacherId)
         {
             return BaseViewModel.UniversalConvert<SubjectDTO, SubjectViewModel>
                 (SubjectService.GetAll.Where(s => s.ListIdTeachers.Contains(teacherId))).ToList();
         }
 
-        public List<SubjectViewModel> GetSubjects(int idFaculty) => GetAllSubjects.Where(s => s.FacultyId == idFaculty).ToList();
+        public List<SubjectViewModel> GetSubjects(string idFaculty) => GetAllSubjects.Where(s => s.FacultyId == idFaculty).ToList();
 
         public List<SubjectViewModel> GetAllSubjects =>
              BaseViewModel.UniversalConvert<SubjectDTO, SubjectViewModel>(SubjectService.GetAll).ToList();

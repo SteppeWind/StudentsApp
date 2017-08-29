@@ -8,7 +8,8 @@ namespace StudentsApp.DAL.Contracts
 {
     public interface IStartRepository
     {
+        bool IsExistDB { get; }
+        void ClearDB();
         void FillDataDB();
-        void FillDataIdentityDB();
     }
 }

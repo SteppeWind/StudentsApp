@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace StudentsApp.DAL.Entities
 {
-    public abstract class Person : BaseEntity, IProfile
+    public class Person : BaseEntity
     {
         public virtual Profile Profile { get; set; }
     }

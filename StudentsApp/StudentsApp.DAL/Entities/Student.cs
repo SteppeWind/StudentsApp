@@ -12,9 +12,10 @@ namespace StudentsApp.DAL.Entities
     {
         public virtual ICollection<Mark> ListMarks { get; set; }
 
-        public virtual ICollection<VisitSubject> ListVisitSubjects { get; set; }        
+        public virtual ICollection<StudentSubject> ListVisitSubjects { get; set; }        
+        
+        public virtual ICollection<StudentGroup> ListGroups { get; set; }
 
-        public virtual ICollection<Group> ListGroups { get; set; }
 
         [NotMapped]
         public double AverageMark
@@ -36,8 +37,8 @@ namespace StudentsApp.DAL.Entities
         public Student()
         {
             ListMarks = new List<Mark>();
-            ListVisitSubjects = new List<VisitSubject>();
-            ListGroups = new List<Group>();
+            ListVisitSubjects = new List<StudentSubject>();
+            ListGroups = new List<StudentGroup>();
         }
     }
 }

@@ -213,8 +213,10 @@
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\MarkController.cs" />
     <Compile Include="Controllers\StudentController.cs" />
+    <Compile Include="Controllers\StudentSubjectController.cs" />
     <Compile Include="Controllers\SubjectController.cs" />
     <Compile Include="Controllers\TeacherController.cs" />
+    <Compile Include="Controllers\TeacherSubjectController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
@@ -224,6 +226,7 @@
     <Compile Include="Models\Entities\ComplexEntities\ComplexFaculty.cs" />
     <Compile Include="Models\Entities\ComplexEntities\ComplexMark.cs" />
     <Compile Include="Models\Entities\ComplexEntities\ComplexStudent.cs" />
+    <Compile Include="Models\Entities\ComplexEntities\ComplexStudentSubject.cs" />
     <Compile Include="Models\Entities\ComplexEntities\ComplexTeacher.cs" />
     <Compile Include="Models\Entities\ComplexEntities\ComplexTestMark.cs" />
     <Compile Include="Models\Entities\ComplexEntities\SubjectWithStudents.cs" />
@@ -232,6 +235,8 @@
     <Compile Include="Models\Entities\Edit\AddStudentToTeacherViewModel.cs" />
     <Compile Include="Models\Entities\Edit\AddSubjectToStudentViewModel.cs" />
     <Compile Include="Models\Entities\Edit\AddSubjectToTeacherViewModel.cs" />
+    <Compile Include="Models\Entities\Edit\CreateStudentSubject.cs" />
+    <Compile Include="Models\Entities\Edit\SelectedSubjects.cs" />
     <Compile Include="Models\Entities\ExamMarkViewModel.cs" />
     <Compile Include="Models\Entities\FacultyViewModel.cs" />
     <Compile Include="Models\Entities\GroupViewModel.cs" />
@@ -241,11 +246,13 @@
     <Compile Include="Models\Entities\Register\RegisterStudent.cs" />
     <Compile Include="Models\Entities\Register\RegisterSubject.cs" />
     <Compile Include="Models\Entities\Register\RegisterTeacher.cs" />
+    <Compile Include="Models\Entities\StudentSubjectViewModel.cs" />
     <Compile Include="Models\Entities\StudentViewModel.cs" />
     <Compile Include="Models\Entities\SubjectTypeViewModel.cs" />
     <Compile Include="Models\Entities\SubjectViewModel.cs" />
     <Compile Include="Models\Entities\TeacherFacultyVIewModel.cs" />
     <Compile Include="Models\Entities\TeacherPostViewModel.cs" />
+    <Compile Include="Models\Entities\TeacherSubjectViewModel.cs" />
     <Compile Include="Models\Entities\TeacherViewModel.cs" />
     <Compile Include="Models\Entities\TestMarkViewModel.cs" />
     <Compile Include="Models\ExternalLoginListViewModel.cs" />
@@ -320,7 +327,6 @@
     <Content Include="Views\Account\Edit.cshtml" />
     <Content Include="Views\Student\Index.cshtml" />
     <Content Include="Views\Student\Create.cshtml" />
-    <Content Include="Views\Dean\AddStudentToTeacher.cshtml" />
     <Content Include="Views\Teacher\Create.cshtml" />
     <Content Include="Views\Mark\Create.cshtml" />
     <Content Include="Views\Mark\EditPartial.cshtml" />
@@ -328,9 +334,14 @@
     <Content Include="Views\Teacher\AddSubjectToStudent.cshtml" />
     <Content Include="Views\Dean\Details.cshtml" />
     <Content Include="Views\Subject\Create.cshtml" />
-    <Content Include="Views\Dean\AddSubjectToTeacher.cshtml" />
     <Content Include="Views\Shared\CreateGroup.cshtml" />
     <Content Include="Views\Home\GetCountStudentAndTeacher.cshtml" />
+    <Content Include="Views\TeacherSubject\Details.cshtml" />
+    <Content Include="Views\TeacherSubject\Delete.cshtml" />
+    <Content Include="Views\TeacherSubject\Create.cshtml" />
+    <Content Include="Views\StudentSubject\Create.cshtml" />
+    <Content Include="Views\StudentSubject\Details.cshtml" />
+    <Content Include="Views\StudentSubject\Delete.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

@@ -25,5 +25,14 @@ namespace StudentsApp.WEB.Models.Entities.ComplexEntities
 
         [Display(Name = "Преподаватели, предметы которых посещают все студенты")]
         public List<TeacherViewModel> TeachersWithAllStudents { get; set; }
+
+        public ComplexDean()
+        {
+            Groups = Groups ?? new List<GroupViewModel>();
+            Subjects = Subjects ?? new List<SubjectViewModel>();
+            StudentsMoreAverageMark = StudentsMoreAverageMark ?? new List<StudentViewModel>();
+            TeachersWithMinCountStudents = TeachersWithMinCountStudents ?? new List<TeacherViewModel>();
+            TeachersWithAllStudents = TeachersWithAllStudents ?? new List<TeacherViewModel>();
+        }
     }
 }

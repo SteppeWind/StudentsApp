@@ -9,7 +9,6 @@ namespace StudentsApp.BLL.Contracts
 {
     public interface IDeanService : IPersonService<DeanDTO>, IBaseService<DeanDTO>
     {
-        void RemoveFaculty(int idDean, int idFaculty);
-        void AddFaculty(int idDean, int idFaculty);        
+        IEnumerable<DeanDTO> GetDeansInFaculty(string facultyId);
     }
 }

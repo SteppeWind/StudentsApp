@@ -11,17 +11,17 @@ namespace StudentsApp.DAL.Entities
         public string GroupName { get; set; }
 
 
-        public virtual ICollection<Student> ListStudents { get; set; }
+        public virtual ICollection<StudentGroup> ListStudents { get; set; }
 
 
-        public int FacultyId { get; set; }
+        public string FacultyId { get; set; }
 
         public virtual Faculty Faculty { get; set; }
 
 
         public Group()
         {
-            ListStudents = new List<Student>();
+            ListStudents = new List<StudentGroup>();
         }
     }
 }

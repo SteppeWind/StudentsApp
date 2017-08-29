@@ -11,6 +11,6 @@ namespace StudentsApp.BLL.Contracts
     {
         IEnumerable<ExamMarkDTO> GetExams { get; }
         IEnumerable<TestMarkDTO> GetTests { get; }
-        IEnumerable<MarkDTO> GetStudentMarks(int idStudent);
+        IEnumerable<MarkDTO> GetStudentMarks(string idStudent);
     }
 }

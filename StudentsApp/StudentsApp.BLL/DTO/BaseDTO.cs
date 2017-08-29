@@ -8,13 +8,8 @@ namespace StudentsApp.BLL.DTO
 {
     public class BaseDTO
     {
-        public int Id { get; set; }
+        public string Id { get; set; }
 
-        public bool IsDelete { get; set; }
-
-        public BaseDTO()
-        {
-            IsDelete = false;
-        }
+        public bool IsDelete { get; set; }        
     }
 }

@@ -9,5 +9,6 @@ namespace StudentsApp.BLL.Contracts
 {
     public interface IFacultyService : IBaseService<FacultyDTO>
     {
+        bool IsHaveSubjectFromFaculty(string subjectId, string facultyId);
     }
 }

@@ -4,14 +4,12 @@
     ViewBag.Title = "StudentSummary";
 }
 
-<tr class="well">
-    <td>
-        @using (Html.BeginForm("Details", "Student", FormMethod.Get))
-        {
-            @Html.HiddenFor(s => s.Id)
-            <button class="btn btn-link">@Model.Abbr</button>
-        }
-    </td>
-    <td>@Model.Email</td>
-    <td>@Model.AverageMark</td>
-</tr>
+<td>
+    @using (Html.BeginForm("Details", "Student", FormMethod.Get))
+    {
+        @Html.HiddenFor(s => s.Id)
+        <button class="btn btn-link">@Model.Abbr</button>
+    }
+</td>
+<td>@Model.Email</td>
+<td>@Model.AverageMark</td>

@@ -8,9 +8,9 @@ namespace StudentsApp.WEB.Models.Entities.Edit
 {
     public class AddStudentToTeacherViewModel
     {
-        public int TeacherId { get; set; }
+        public string TeacherId { get; set; }
 
-        public int FacultyId { get; set; }
+        public string FacultyId { get; set; }
 
         [Display(Name = "Список студентов")]
         public List<StudentViewModel> Students { get; set; }

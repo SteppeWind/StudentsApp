@@ -9,18 +9,17 @@ namespace StudentsApp.DAL.Entities
 {
     public class TeacherFaculty : BaseEntity
     {
-        [ForeignKey("Teacher")]
-        public int TeacherId { get; set; }
+        public string TeacherId { get; set; }
 
         public virtual Teacher Teacher { get; set; }
 
-        [ForeignKey("Faculty")]
-        public int FacultyId { get; set; }
+
+        public string FacultyId { get; set; }
 
         public virtual Faculty Faculty { get; set; }
 
-        [ForeignKey("Post")]
-        public int PostTeacherId { get; set; }
+
+        public string PostTeacherId { get; set; }
 
         public virtual PostTeacher Post { get; set; }
     }

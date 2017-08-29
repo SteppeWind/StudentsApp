@@ -43,6 +43,9 @@ namespace StudentsApp.WEB.Util
             kernel.Bind<ITeacherPostService>().To<TeacherPostService>();
             kernel.Bind<IStartService>().To<StartService>();
             kernel.Bind<IUserService>().To<UserService>();
+            kernel.Bind<ITeacherFacultyService>().To<TeacherFacultyService>();
+            kernel.Bind<ITeacherSubjectService>().To<TeacherSubjectService>();
+            kernel.Bind<IStudentSubjectService>().To<StudentSubjectService>();
         }
     }
 }

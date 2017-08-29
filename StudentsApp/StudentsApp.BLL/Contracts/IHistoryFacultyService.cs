@@ -9,6 +9,6 @@ namespace StudentsApp.BLL.Contracts
 {
     public interface IHistoryFacultyService : IBaseService<DeanFacultyDTO>
     {
-        IEnumerable<DeanFacultyDTO> GetHistory(int idFaculty);
+        IEnumerable<DeanFacultyDTO> GetHistory(string idFaculty);
     }
 }

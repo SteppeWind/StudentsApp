@@ -1,4 +1,5 @@
 ﻿using StudentsApp.BLL.DTO;
+using StudentsApp.BLL.Infrastructure;
 using StudentsApp.DAL.Entities;
 using System;
 using System.Collections.Generic;
@@ -10,12 +11,13 @@ namespace StudentsApp.BLL.Contracts
 {
     public interface IBaseService<TEntity> where TEntity : BaseDTO
     {
-        void Add(TEntity entity);
-        void Remove(int id);
-        void FullRemove(int id);
-        void Update(TEntity entity);
-        TEntity Get(int id);
+        Task<OperationDetails> AddAsync(TEntity entity);
+        OperationDetails Remove(string id);
+        OperationDetails FullRemove(string id);
+        Task<OperationDetails> UpdateAsync(TEntity entity);
+        TEntity Get(string id);
         IEnumerable<TEntity> GetAll { get; }
+        int Count { get; }
         //EntityDTO UniversalConvert<Entity, EntityDTO>(Entity entity) where Entity : BaseEntity where EntityDTO : BaseDTO;
         //Entity UniversalReverseConvert<Entity, EntityDTO>(EntityDTO entity) where Entity : BaseEntity where EntityDTO : BaseDTO;
     }

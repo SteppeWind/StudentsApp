@@ -10,19 +10,19 @@ namespace StudentsApp.BLL.DTO
     {
         public string FacultyName { get; set; }
 
-        public int? DeanId { get; set; }
+        public string DeanId { get; set; }
 
-        public List<int> ListIdSubjects { get; set; }
+        public List<string> ListIdSubjects { get; set; }
 
-        public List<int> ListIdGroups { get; set; }
+        public List<string> ListIdGroups { get; set; }
 
-        public List<int> ListIdTeachers { get; set; }
+        public List<string> ListIdTeachers { get; set; }
 
         public FacultyDTO()
         {
-            ListIdSubjects = new List<int>();
-            ListIdGroups = new List<int>();
-            ListIdTeachers = new List<int>();
+            ListIdSubjects = new List<string>();
+            ListIdGroups = new List<string>();
+            ListIdTeachers = new List<string>();
         }
     }
 }

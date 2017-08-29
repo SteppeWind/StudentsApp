@@ -8,12 +8,16 @@ namespace StudentsApp.BLL.DTO
 {
     public class TeacherFacultyDTO : BaseDTO
     {
-        public int FacultyId { get; set; }
+        public string FacultyId { get; set; }
         
         public string FacultyName { get; set; }
 
-        public int PostTeacherId { get; set; }
+
+        public string PostTeacherId { get; set; }
 
         public string NamePostTeacher { get; set; }
+
+
+        public string TeacherId { get; set; }
     }
 }

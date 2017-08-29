@@ -41,14 +41,21 @@ namespace StudentsApp.DAL.Repositories
 
         public override IEnumerable<TEntity> GetAll => entities.ToList();
 
+        public override int Count => entities.Count();
+
         public override IEnumerable<TEntity> Find(Func<TEntity, bool> predicate)
         {
             return entities.Where(predicate).ToList();
         }
 
-        public override TEntity GetById(int id)
+        public override TEntity GetById(string id)
         {
             return entities?.FirstOrDefault(e => e.Id == id);
-        }       
+        }
+
+        public override TEntity FindFirst(Func<TEntity, bool> predicate)
+        {
+            return Find(predicate).FirstOrDefault();
+        }
     }
 }

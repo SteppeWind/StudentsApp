@@ -7,11 +7,11 @@ namespace StudentsApp.WEB.Models.Entities
 {
     public class TeacherFacultyVIewModel : BaseViewModel
     {        
-        public int FacultyId { get; set; }
+        public string FacultyId { get; set; }
      
         public string FacultyName { get; set; }
 
-        public int PostTeacherId { get; set; }
+        public string PostTeacherId { get; set; }
         
         public string NamePostTeacher { get; set; }
     }

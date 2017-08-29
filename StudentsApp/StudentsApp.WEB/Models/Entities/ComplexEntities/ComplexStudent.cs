@@ -9,7 +9,7 @@ namespace StudentsApp.WEB.Models.Entities.ComplexEntities
     {
         public List<GroupViewModel> Groups { get; set; }
 
-        public List<SubjectViewModel> Subjects { get; set; }
+        public List<StudentSubjectViewModel> StudentSubjects { get; set; }        
 
         public List<ExamMarkViewModel> ExamMarks => Marks
             .Where(m => m.Type == SubjectTypeViewModel.Exam)
@@ -24,7 +24,7 @@ namespace StudentsApp.WEB.Models.Entities.ComplexEntities
         public ComplexStudent()
         {
             Groups = new List<GroupViewModel>();
-            Subjects = new List<SubjectViewModel>();
+            StudentSubjects = new List<StudentSubjectViewModel>();
             Marks = new List<MarkViewModel>();
         }
     }

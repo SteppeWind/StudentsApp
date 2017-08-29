@@ -20,7 +20,7 @@ namespace StudentsApp.BLL.Services
         public MarkService(IUnitOfWork uow) : base(uow) { }
 
 
-        private Mark GetMarkIfExist(int id)
+        private Mark GetMarkIfExist(string id)
         {
             var mark = DataBase.MarkRepository[id];
 
@@ -108,28 +108,58 @@ namespace StudentsApp.BLL.Services
             }
         }
 
+        public int Count => DataBase.MarkRepository.Count;
+
         /// <summary>
         /// Add mark in DB
         /// </summary>
         /// <param name="entity">Mark</param>
-        public void Add(MarkDTO entity)
+        /// <returns></returns>
+        public async Task<OperationDetails> AddAsync(MarkDTO entity)
         {
-            Mark mark = ReverseConvert(entity);//convert to entity DB
+            OperationDetails answer = null;
 
-            DataBase.MarkRepository.Add(mark);//add converted mark
-            DataBase.Save();
+            try
+            {
+                Mark mark = ReverseConvert(entity);//convert to entity DB
+                mark.Id = BaseEntity.GenerateId;
+
+                DataBase.MarkRepository.Add(mark);//add converted mark
+                await DataBase.SaveAsync();
+                answer = new OperationDetails(true, "Оценка успешно добавлена");
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
+            }
+            
+            return answer;
         }
 
         /// <summary>
         /// Full remove from DB
         /// </summary>
         /// <param name="id">Id mark</param>
-        public void FullRemove(int id)
+        /// <returns></returns>
+        public OperationDetails FullRemove(string id)
         {
-            var mark = GetMarkIfExist(id);//find mark
+            OperationDetails answer = null;
 
-            DataBase.MarkRepository.FullRemove(mark);//delete from DB
-            DataBase.Save();
+            try
+            {
+                var mark = GetMarkIfExist(id);//find mark
+
+                string message = $"Оценка для студента '{mark.Student.Profile}' \n по дисциплине '{mark.Subject.SubjectName}' полностью удалена из базы";
+                answer = new OperationDetails(true, message);
+                DataBase.MarkRepository.FullRemove(mark);//delete from DB
+                DataBase.Save();
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
+            }
+
+            return answer;
         }
 
         /// <summary>
@@ -137,7 +167,7 @@ namespace StudentsApp.BLL.Services
         /// </summary>
         /// <param name="id">Id mark</param>
         /// <returns>Converted mark</returns>
-        public MarkDTO Get(int id)
+        public MarkDTO Get(string id)
         {
             return Convert(GetMarkIfExist(id));
         }
@@ -146,41 +176,69 @@ namespace StudentsApp.BLL.Services
         /// Change value IsDelete to false for finded mark
         /// </summary>
         /// <param name="id"></param>
-        public void Remove(int id)
+        /// <returns></returns>
+        public OperationDetails Remove(string id)
         {
-            var mark = GetMarkIfExist(id);
+            OperationDetails answer = null;
 
-            DataBase.MarkRepository.Remove(mark);
-            DataBase.Save();
+            try
+            {
+                var mark = GetMarkIfExist(id);
+
+                DataBase.MarkRepository.Remove(mark);
+                DataBase.Save();
+                string message = $"Оценка для студента '{mark.Student.Profile}' \n по дисциплине '{mark.Subject.SubjectName}' помечена как 'Удалён'";
+                answer = new OperationDetails(true, message);
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
+            }
+
+            return answer;
         }
+
 
         /// <summary>
         /// Update mark
         /// </summary>
         /// <param name="entity"></param>
-        public void Update(MarkDTO entity)
+        /// <returns></returns>
+        public async Task<OperationDetails> UpdateAsync(MarkDTO entity)
         {
-            var mark = GetMarkIfExist(entity.Id);//find mark
+            OperationDetails answer = null;
 
-            mark.SemesterNumber = entity.SemesterNumber;//change semestr
-            mark.DateSubjectPassing = entity.DateSubjectPassing;//change date
-
-            if (mark is ExamMark examMark && entity is ExamMarkDTO examMarkDTO)//check if mark is exam in both cases
+            try
             {
-                examMark.Mark = examMarkDTO.Mark;
-                DataBase.MarkRepository.Update(examMark);
-            }
+                var mark = GetMarkIfExist(entity.Id);//find mark
 
-            if (mark is TestMark testMark && entity is TestMarkDTO testMarkDTO)//check if mark is test in both cases
+                mark.SemesterNumber = entity.SemesterNumber;//change semestr
+                mark.DateSubjectPassing = entity.DateSubjectPassing;//change date
+
+                if (mark is ExamMark examMark && entity is ExamMarkDTO examMarkDTO)//check if mark is exam in both cases
+                {
+                    examMark.Mark = examMarkDTO.Mark;
+                    DataBase.MarkRepository.Update(examMark);
+                }
+
+                if (mark is TestMark testMark && entity is TestMarkDTO testMarkDTO)//check if mark is test in both cases
+                {
+                    testMark.IsPassed = testMarkDTO.IsPassed;
+                    DataBase.MarkRepository.Update(testMark);
+                }
+
+                answer = new OperationDetails(true, $"Для студента '{mark.Student.Profile}' по дисциплине '{mark.Subject.SubjectName}' оценка успешно обновлена");
+                await DataBase.SaveAsync();
+            }
+            catch (Exception ex)
             {
-                testMark.IsPassed = testMarkDTO.IsPassed;
-                DataBase.MarkRepository.Update(testMark);
+                answer = new OperationDetails(false, ex.Message);
             }
-
-            DataBase.Save();
+          
+            return answer;
         }
 
-        public IEnumerable<MarkDTO> GetStudentMarks(int idStudent)
+        public IEnumerable<MarkDTO> GetStudentMarks(string idStudent)
         {
             return GetAll.Where(m => m.StudentId == idStudent);
         }

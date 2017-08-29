@@ -18,22 +18,21 @@ namespace StudentsApp.BLL.Services
     /// </summary>
     public class TeacherService : PersonService<TeacherDTO, Teacher>, ITeacherService
     {
-        public TeacherService(IUnitOfWork uow, IIndentityUnitOfWork iouw) : base(uow, iouw) { }
+        public TeacherService(IUnitOfWork uow) : base(uow) { }
 
-
-        private Teacher GetTeacherIfExist(int id)
+        private Teacher GetTeacherIfExistById(string id)
         {
             var teacher = DataBase.TeacherRepository[id];
 
             if (teacher == null)
             {
-                throw new ValidationException("Преподаватель не найден");
+                throw new PersonNotFoundException("Преподаватель не найден");
             }
 
             return teacher;
         }
 
-        private Teacher GetTeacherIfExist(string email)
+        private Teacher GetTeacherIfExistByEmail(string email)
         {
             var teacher = DataBase.TeacherRepository.GetByEmail(email);
 
@@ -45,7 +44,7 @@ namespace StudentsApp.BLL.Services
             return teacher;
         }
 
-        private Subject GetSubjectIfExist(int id)
+        private Subject GetSubjectIfExist(string id)
         {
             var subject = DataBase.SubjectRepository[id];
 
@@ -57,7 +56,7 @@ namespace StudentsApp.BLL.Services
             return subject;
         }
 
-        private Faculty GetFacultyIfExist(int id)
+        private Faculty GetFacultyIfExist(string id)
         {
             var faculty = DataBase.FacultyRepository[id];
 
@@ -75,15 +74,15 @@ namespace StudentsApp.BLL.Services
         {
             var result = base.Convert(entity);
 
-            result.ListIdSubjects = entity.ListSubjects?.Select(s => s.Id).ToList();
+            result.ListIdSubjects = entity.ListSubjects?.Select(s => s.SubjectId).ToList();
 
-            result.ListIdStudents = entity.ListVisitSubjects?.Select(s => s.StudentId).ToList();
+            result.ListIdStudents = entity.ListStudents?.Select(s => s.StudentId).ToList();
 
             result.ListIdFaculties = entity.ListTeacherFaculty?.Select(tf => tf.FacultyId).ToList();
 
             //find intersect with studentId and teacherId, remove duplicates and save count
-            if (entity.ListVisitSubjects != null)
-                result.CountStudents = entity.ListVisitSubjects.Select(vs => new { stId = vs.StudentId, tchId = vs.TeacherId }).Distinct().Count();
+            if (entity.ListStudents != null)
+                result.CountStudents = entity.ListStudents.Select(vs => new { stId = vs.StudentId, tchId = vs.TeacherId }).Distinct().Count();
 
             return result;
         }
@@ -99,83 +98,60 @@ namespace StudentsApp.BLL.Services
             }
         }
 
+        public int Count => DataBase.TeacherRepository.Count;
+
         /// <summary>
         /// Add teacher to DB
         /// </summary>
         /// <param name="entity"></param>
-        public void Add(TeacherDTO entity)
+        /// <returns></returns>
+        public async Task<OperationDetails> AddAsync(TeacherDTO entity)
         {
+            OperationDetails answer = null;
+
             bool isExist = PersonIsExist(entity);//find the same email
             if (isExist)
             {
-                throw new PersonIsExistException(entity, $"Пользователь с email {entity.Email} уже существует");
+                answer = new OperationDetails(false, $"Пользователь с email {entity.Email} уже существует");
             }
-
-            var teacher = ReverseConvert(entity);
-            var profile = UniversalReverseConvert<DAL.Entities.Profile, TeacherDTO>(entity);
-            teacher.Profile = profile;
-
-            DataBase.TeacherRepository.Add(teacher);
-            Create(entity);
-
-            DataBase.Save();
-        }
-
-        /// <summary>
-        /// Add subject to teacher
-        /// </summary>
-        /// <param name="idSubject">Id subject</param>
-        /// <param name="idTeacher">Id teacher</param>
-        public void AddSubject(int idSubject, int idTeacher)
-        {
-            var teacher = GetTeacherIfExist(idTeacher);
-            var subject = GetSubjectIfExist(idSubject);
-
-            if (teacher.ListSubjects.Contains(subject))
+            else
             {
-                throw new ValidationException($"Преподаватель {teacher.Profile} уже преподает дисцпилину {subject.SubjectName}");
+                var teacher = await Create<DAL.Entities.Profile>(entity);               
+                DataBase.TeacherRepository.Add(teacher);
+                await DataBase.SaveAsync();
+
+                await DataBase.ProfileManager.AddToRoleAsync(teacher.Id, "teacher");
+                await DataBase.SaveAsync();
+
+                answer = new OperationDetails(true, $"Преподаватель {teacher.Profile} успешно создан");
             }
 
-            AddSubject(teacher, subject.Id);
+            return answer;
         }
 
-        private void AddTeacherPost(Teacher teacher, int idFaculty, int idPost)
+        public OperationDetails FullRemove(string id)
         {
-            DataBase.TeacherRepository.AddTeacherPost(teacher, idFaculty, idPost);
-            DataBase.Save();
-        }
+            OperationDetails answer = null;
 
-        private void AddSubject(Teacher teacher, int idSubject)
-        {
-            DataBase.TeacherRepository.AddSubject(teacher, idSubject);
-            DataBase.Save();
-        }
-
-
-        public void AddTeacherPost(int idTeacher, int idFaculty, int idPost)
-        {
-            var teacher = GetTeacherIfExist(idTeacher);
-            var faculty = GetFacultyIfExist(idFaculty);
-            var post = DataBase.PostTeacherRepository[idPost];
-
-            if (post == null)
+            try
             {
-                //check
+                var teacher = GetTeacherIfExistById(id);
+
+                DataBase.MarkRepository.FullRemove(teacher.ListMarks);
+                DataBase.TeacherFacultyRepository.FullRemove(teacher.ListTeacherFaculty);
+                DataBase.StudentSubjectRepository.FullRemove(teacher.ListStudents);
+                DataBase.TeacherSubjectRepository.FullRemove(teacher.ListSubjects);
+                answer = new OperationDetails(true, $"Преподаватель '{teacher.Profile}' полностью удален из базы");
+                Task.Run(async () => await DeleteProfile(teacher.Profile));
+                DataBase.TeacherRepository.FullRemove(teacher);
+                DataBase.Save();
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
             }
 
-            AddTeacherPost(teacher, idFaculty, idPost);
-        }
-
-        public void FullRemove(int id)
-        {
-            var teacher = GetTeacherIfExist(id);
-
-            DataBase.MarkRepository.FullRemove(teacher.ListMarks);
-            DataBase.TeacherFacultyRepository.FullRemove(teacher.ListTeacherFaculty);
-            DataBase.VisitSubjectRepository.FullRemove(teacher.ListVisitSubjects);
-            Delete(teacher);//delete teacher from IdentityDB
-            DataBase.TeacherRepository.FullRemove(teacher);
-            DataBase.Save();
+            return answer;
         }
 
         /// <summary>
@@ -183,97 +159,55 @@ namespace StudentsApp.BLL.Services
         /// </summary>
         /// <param name="id">Id teacher</param>
         /// <returns></returns>
-        public TeacherDTO Get(int id)
+        public TeacherDTO Get(string id)
         {
-            return Convert(GetTeacherIfExist(id));
+            return Convert(GetTeacherIfExistById(id));
         }
 
         /// <summary>
         /// Change value IsDelete to false for finded teacher
         /// </summary>
         /// <param name="id"></param>
-        public void Remove(int id)
+        /// <returns></returns>
+        public OperationDetails Remove(string id)
         {
-            var teacher = GetTeacherIfExist(id);
+            OperationDetails answer = null;
 
-            DataBase.TeacherRepository.Remove(teacher);
-            DataBase.Save();
+            try
+            {
+                var teacher = GetTeacherIfExistById(id);
+
+                DataBase.TeacherRepository.Remove(teacher);
+                DataBase.Save();
+                answer = new OperationDetails(true, $"Преподаватель {teacher.Profile} почемен как 'Удалён'");
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
+            }
+
+            return answer;
         }
 
-        /// <summary>
-        /// Delete subject from teacher
-        /// </summary>
-        /// <param name="idSubject">Id subject</param>
-        /// <param name="idTeacher">Id teacher</param>
-        public void RemoveSubject(int idSubject, int idTeacher)
+        public async Task<OperationDetails> UpdateAsync(TeacherDTO entity)
         {
-            var teacher = GetTeacherIfExist(idTeacher);
-            var subject = GetSubjectIfExist(idSubject);
+            OperationDetails answer = null;
 
-            DataBase.TeacherRepository.RemoveSubject(teacher, subject.Id);
-            DataBase.Save();
-        }
-
-        /// <summary>
-        /// Remove post from teacher
-        /// </summary>
-        /// <param name="idTeacher">Id teacher</param>
-        /// <param name="idFaculty">Id faculty</param>
-        /// <param name="idPost">Id post</param>
-        public void RemoveTeacherPost(int idTeacher, int idFaculty, int idPost)
-        {
-            var teacher = GetTeacherIfExist(idTeacher);
-            var faculty = GetFacultyIfExist(idFaculty);
-            var post = DataBase.PostTeacherRepository[idPost];
-
-            if (post == null)
+            try
             {
-                //check
+                var teacher = GetTeacherIfExistByEmail(entity.Id);
+
+                var profile = teacher.Profile;
+                UpdatePerson(entity, profile);//update profile
+                await DataBase.ProfileManager.UpdateAsync(profile);
+                await DataBase.SaveAsync();
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
             }
 
-            DataBase.TeacherRepository.RemoveTeacherPost(idTeacher, idFaculty, idPost);
-            DataBase.Save();
-        }
-
-        public void Update(TeacherDTO entity)
-        {
-            var teacher = GetTeacherIfExist(entity.Id);
-
-            var profile = teacher.Profile;
-            UpdatePerson(entity, profile);//update profile
-            DataBase.ProfileRepository.Update(profile);
-            DataBase.Save();
-        }
-
-        public void UpdateTeacherPost(int idTeacher, int idFaculty, int idOldPost, int idNewPost)//*?
-        {
-            var teacher = DataBase.TeacherRepository[idTeacher];
-            var faculty = DataBase.FacultyRepository[idFaculty];
-            var oldPost = DataBase.PostTeacherRepository[idOldPost];
-            var newPost = DataBase.PostTeacherRepository[idNewPost];
-
-            if (teacher == null)
-            {
-                //check
-            }
-
-            if (faculty == null)
-            {
-                //check
-            }
-
-            if (oldPost == null)
-            {
-                //check
-            }
-
-            if (newPost == null)
-            {
-                //check
-            }
-
-            DataBase.TeacherRepository.UpdateTeacherPost(idTeacher, idFaculty, idOldPost, idNewPost);
-            DataBase.Save();
+            return answer;
         }
 
         public Task<TeacherDTO> GetByEmailAsync(string email)
@@ -303,7 +237,7 @@ namespace StudentsApp.BLL.Services
             return ConvertAsync(DataBase.TeacherRepository.GetBySurname(surname));
         }
 
-        public IEnumerable<TeacherFacultyDTO> GetPosts(int idTeacher)
+        public IEnumerable<TeacherFacultyDTO> GetPosts(string idTeacher)
         {
             var teacher = DataBase.TeacherRepository[idTeacher];
             var teacherFaculties = DataBase.TeacherFacultyRepository.Find(t => t.TeacherId == idTeacher).ToList();
@@ -321,47 +255,12 @@ namespace StudentsApp.BLL.Services
             return teacherFacultiesDTO;
         }
 
-        public void AddSubject(int idSubject, string teacherEmail)
-        {
-            var teacher = GetTeacherIfExist(teacherEmail);
-
-            AddSubject(teacher, idSubject);
-        }
-
-
-        public void AddTeacherPost(string teacherEmail, int idFaculty, int idPost)
-        {
-            var teacher = GetTeacherIfExist(teacherEmail);
-            AddTeacherPost(teacher, idFaculty, idPost);
-        }
-
-        public void AddSubject(IEnumerable<int> idsSubjects, string teacherEmail)
-        {
-            var teacher = GetTeacherIfExist(teacherEmail);
-
-            if (idsSubjects == null)
-            {
-                throw new NullReferenceException();
-            }
-
-            if (idsSubjects.Count() == 0)
-            {
-                throw new ValidationException("Вы не выбрали ни одного предмета");
-            }
-
-            foreach (var item in idsSubjects)
-            {
-                var subject = GetSubjectIfExist(item);
-                AddSubject(teacher, subject.Id);
-            }
-        }
-
         /// <summary>
         /// Get teachers from faculty
         /// </summary>
         /// <param name="idFaculty">Id faculty</param>
         /// <returns></returns>
-        public IEnumerable<TeacherDTO> GetTeachers(int idFaculty)
+        public IEnumerable<TeacherDTO> GetTeachers(string idFaculty)
         {
             List<TeacherDTO> teachers = new List<TeacherDTO>();
 
@@ -384,7 +283,7 @@ namespace StudentsApp.BLL.Services
         /// </summary>
         /// <param name="idFaculty">Id faculty</param>
         /// <returns></returns>
-        public IEnumerable<TeacherDTO> GetTeachersWithMinCountStudents(int idFaculty)
+        public IEnumerable<TeacherDTO> GetTeachersWithMinCountStudents(string idFaculty)
         {
             List<TeacherDTO> teachers = GetTeachers(idFaculty).ToList();
 
@@ -398,20 +297,20 @@ namespace StudentsApp.BLL.Services
         /// </summary>
         /// <param name="idFaculty">Id faculty</param>
         /// <returns></returns>
-        public IEnumerable<TeacherDTO> GetTeachersWithAllStudents(int idFaculty)
+        public IEnumerable<TeacherDTO> GetTeachersWithAllStudents(string idFaculty)
         {
             List<TeacherDTO> teachersDTO = new List<TeacherDTO>();
             List<Student> students = new List<Student>();
 
             var subjects = DataBase.SubjectRepository.GetAll;
-            var teachers = DataBase.TeacherRepository.GetTeachers(idFaculty);
+            var teachers = DataBase.TeacherRepository.GetAll.Where(t => t.ListTeacherFaculty.Select(tf => tf.FacultyId).Contains(idFaculty));
 
             //find students which visit one faculty
             foreach (var student in DataBase.StudentRepository.GetAll)
             {
                 foreach (var group in DataBase.GroupRepository.GetAll)
                 {
-                    if (group.FacultyId == idFaculty && DataBase.GroupRepository.IsContaintsStudentFromGroup(group, student.Id))
+                    if (group.FacultyId == idFaculty && group.ListStudents.Intersect(student.ListGroups).Any())
                     {
                         students.Add(student);
                     }
@@ -422,7 +321,7 @@ namespace StudentsApp.BLL.Services
             //если счетчик равен числу студентов на факультете, то этого препода посещают все студенты
             foreach (var teacher in teachers)
             {
-                var teacherSubjects = teacher.ListSubjects;
+                var teacherSubjects = teacher.ListSubjects.Select(ts => ts.Subject);
 
                 int count = 0;
 
@@ -444,6 +343,11 @@ namespace StudentsApp.BLL.Services
             }
 
             return teachersDTO;
+        }
+
+        public IEnumerable<TeacherDTO> GetTeachersBySubjectId(string subjectId)
+        {
+            return Convert(DataBase.TeacherRepository.Find(t => t.ListSubjects.Select(s => s.SubjectId).Contains(subjectId)));
         }
     }
 }

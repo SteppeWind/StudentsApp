@@ -40,13 +40,13 @@ namespace StudentsApp.WEB.Controllers
         }
 
         [HttpGet]
-        public ActionResult Details(int id = 1)
+        public ActionResult Details(string id = "")
         {
             ComplexFaculty facultyVM = new ComplexFaculty();
 
             var facultyDTO = FacultyService.Get(id);
             var historiesFacultiesDTO = HistoryFacultyService.GetHistory(id).ToList();
-            var deansDTO = DeanService.GetAll.Where(d => historiesFacultiesDTO.Select(hf => hf.DeanId).Contains(d.Id)).ToList();
+            var deansDTO = DeanService.GetDeansInFaculty(id);
             var groupsDTO = GroupService.GetGroupsInFaculty(id).ToList();            
 
             //convert ComplexFaculty to finded FacultyDTO
@@ -55,7 +55,7 @@ namespace StudentsApp.WEB.Controllers
             facultyVM.ListHistoryFaculties = BaseViewModel.UniversalConvert<DeanFacultyDTO, HistoryFacultyViewModel>(historiesFacultiesDTO).ToList();
             facultyVM.ListGroups = BaseViewModel.UniversalConvert<GroupDTO, GroupViewModel>(groupsDTO).ToList();
 
-            //find profile deans who manage current faculty 
+            //find profile deans who manage current faculty             
             foreach (var item in facultyVM.ListHistoryFaculties)
             {
                 var dean = BaseViewModel

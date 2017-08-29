@@ -18,7 +18,6 @@ namespace StudentsApp.WEB.Controllers
         private IDeanService DeanService;
         private IStartService StartService;
 
-
         public HomeController(
             ITeacherService teacherService,
             IStudentService studentService,
@@ -27,56 +26,34 @@ namespace StudentsApp.WEB.Controllers
             IStartService startService)
         {
             TeacherService = teacherService;
-            UserService = userService;
             DeanService = deanService;
             StudentService = studentService;
             StartService = startService;
+            UserService = userService;            
         }
 
-        private async Task roles()
+        private async Task SetData()
         {
-            await UserService.SetInitialData(new PersonDTO()
-            {
-                Email = "admin@mail.ru",
-                Name = "Михаил",
-                MiddleName = "Александрович",
-                Surname = "Берлиоз",
-                Password = "массолит",
-                Role = "admin"
-            }, new List<string>() { "student", "teacher", "dean", "admin" });
-
-            foreach (var item in StudentService.GetAll)
-            {
-                item.Role = "student";
-                item.Password = "qwe123";
-                await UserService.Create(item);
-            }
-            foreach (var item in TeacherService.GetAll)
-            {
-                item.Role = "teacher";
-                item.Password = "qwe123";
-                await UserService.Create(item);
-            }
-            foreach (var item in DeanService.GetAll)
-            {
-                item.Role = "dean";
-                item.Password = "qwe123";
-                await UserService.Create(item);
-            }
+            StartService.ClearData();
+            await UserService.SetRoles("student", "teacher", "dean", "admin");
+            await StartService.FillDataAsync();
         }
 
-        public ActionResult Index()
-        {            
+        public async Task<ActionResult> Index()
+        {
+            if (!StartService.IsExistDB)
+            {
+                await SetData();
+            }
             return View();
         }
 
         public async Task<ActionResult> Set()
         {
-            //var teacher = TeacherService.Get(48);
-            //TeacherService.FullRemove(teacher.Id);
+            await SetData();
 
-            //StartService.FillData();
-            //await roles();
+            //TeacherService.FullRemove((await TeacherService.GetByEmailAsync("navalnyblat@mail.ru")).Id);
+
             return View("Index");
         }
 
@@ -93,11 +70,11 @@ namespace StudentsApp.WEB.Controllers
 
             return View();
         }
-        
+
         public ActionResult GetCountStudentAndTeacher()
         {
-            int countStudents = StudentService.GetAll.Count();
-            int countTeachers = TeacherService.GetAll.Count();
+            int countStudents = StudentService.Count;
+            int countTeachers = TeacherService.Count;
 
             return PartialView(new Tuple<int, int>(countStudents, countTeachers));
         }

@@ -19,7 +19,7 @@ namespace StudentsApp.BLL.Services
     {
         public SubjectService(IUnitOfWork uow) : base(uow) { }
 
-        private Subject GetSubjectIfExist(int id)
+        private Subject GetSubjectIfExist(string id)
         {
             var subject = DataBase.SubjectRepository[id];
 
@@ -29,6 +29,13 @@ namespace StudentsApp.BLL.Services
             }
 
             return subject;
+        }
+
+        private bool IsSubjectExist(string subjectName)
+        {
+            //find subjects with same name
+            return DataBase.SubjectRepository
+                    .FindFirst(s => s.SubjectName.ToUpper().Equals(subjectName.ToUpper())) != null;
         }
 
 
@@ -41,8 +48,8 @@ namespace StudentsApp.BLL.Services
             //save id`s students
             result.ListIdStudents = entity.ListVisitSubjects.Select(s => s.StudentId);
             //save id`s teachers
-            result.ListIdTeachers = entity.ListTeachers.Select(t => t.Id);
-
+            result.ListIdTeachers = entity.ListTeachers.Select(t => t.TeacherId);
+            
             return result;
         }
 
@@ -57,24 +64,38 @@ namespace StudentsApp.BLL.Services
             }
         }
 
+        public int Count => DataBase.SubjectRepository.Count;
+
         /// <summary>
         /// Add subject to DB
         /// </summary>
         /// <param name="subject"></param>
-        public void Add(SubjectDTO subject)
+        /// <returns></returns>
+        public async Task<OperationDetails> AddAsync(SubjectDTO subject)
         {
-            Subject newSubject = ReverseConvert(subject);
+            OperationDetails answer = null;
 
-            var sameSubject = DataBase.SubjectRepository
-                .Find(s => s.SubjectName.ToUpper().Equals(subject.SubjectName.ToUpper())).FirstOrDefault();//find subjects with same name
-
-            if (sameSubject != null)
+            try
             {
-                throw new ValidationException($"Предмет с именем {subject.SubjectName} уже существует");
+                Subject newSubject = ReverseConvert(subject);
+
+                if (IsSubjectExist(subject.SubjectName))
+                {
+                    answer = new OperationDetails(false, $"Предмет с именем {subject.SubjectName} уже существует");
+                }
+                else
+                {
+                    DataBase.SubjectRepository.Add(newSubject);
+                    await DataBase.SaveAsync();
+                    answer = new OperationDetails(true, $"Предмет {subject.SubjectName} успешно добавлен");
+                }
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
             }
 
-            DataBase.SubjectRepository.Add(newSubject);
-            DataBase.Save();
+            return answer;
         }
 
         /// <summary>
@@ -82,7 +103,7 @@ namespace StudentsApp.BLL.Services
         /// </summary>
         /// <param name="id">Id subject</param>
         /// <returns></returns>
-        public SubjectDTO Get(int id)
+        public SubjectDTO Get(string id)
         {
             return Convert(GetSubjectIfExist(id));
         }
@@ -91,33 +112,83 @@ namespace StudentsApp.BLL.Services
         /// Change value IsDelete to false for finded subject
         /// </summary>
         /// <param name="id">Id subject</param>
-        public void Remove(int id)
+        /// <returns></returns>
+        public OperationDetails Remove(string id)
         {
-            var subject = GetSubjectIfExist(id);
+            OperationDetails answer = null;
 
-            DataBase.SubjectRepository.Remove(subject);
-            DataBase.Save();
+            try
+            {
+                var subject = GetSubjectIfExist(id);
+
+                DataBase.SubjectRepository.Remove(subject);
+                DataBase.Save();
+                answer = new OperationDetails(true, $"Предмет {subject.SubjectName} помечен как 'Удалён'");
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
+            }
+
+            return answer;
         }
 
-        public void Update(SubjectDTO subject)
-        {
-            var newSubject = ReverseConvert(subject);
 
-            DataBase.SubjectRepository.Update(newSubject);
-            DataBase.Save();
+        public async Task<OperationDetails> UpdateAsync(SubjectDTO subject)
+        {
+            OperationDetails answer = null;
+
+            try
+            {
+                if (IsSubjectExist(subject.SubjectName))
+                {
+                    answer = new OperationDetails(false, $"Предмет с именем {subject.SubjectName} уже существует");
+                }
+                else
+                {
+                    var newSubject = DataBase.SubjectRepository[subject.Id];
+
+                    newSubject.SubjectName = subject.SubjectName;
+                    newSubject.FacultyId = subject.FacultyId;
+
+                    DataBase.SubjectRepository.Update(newSubject);
+                    await DataBase.SaveAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
+            }
+
+            return answer;
         }
 
         /// <summary>
         /// Full delete from DB
         /// </summary>
-        /// <param name="id">Id subject</param>
-        public void FullRemove(int id)
+        /// <param name="id">Id subject</param></param>
+        /// <returns></returns>
+        public OperationDetails FullRemove(string id)
         {
-            var subject = GetSubjectIfExist(id);
+            OperationDetails answer = null;
 
-            DataBase.MarkRepository.FullRemove(subject.ListMarks);
-            DataBase.SubjectRepository.FullRemove(subject);
-            DataBase.Save();
+            try
+            {
+                var subject = GetSubjectIfExist(id);
+
+                DataBase.MarkRepository.FullRemove(subject.ListMarks);
+                DataBase.StudentSubjectRepository.FullRemove(subject.ListVisitSubjects);
+                DataBase.TeacherSubjectRepository.FullRemove(subject.ListTeachers);
+                DataBase.SubjectRepository.FullRemove(subject);
+                DataBase.Save();
+                answer = new OperationDetails(true, $"Предмет {subject.SubjectName} полностью удалён из базы");
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
+            }
+
+            return answer;
         }
 
         /// <summary>
@@ -125,9 +196,10 @@ namespace StudentsApp.BLL.Services
         /// </summary>
         /// <param name="idFaculty">Id faculty</param>
         /// <returns></returns>
-        public IEnumerable<SubjectDTO> GetSubjectsInFaculty(int idFaculty)
+        public IEnumerable<SubjectDTO> GetSubjectsInFaculty(string idFaculty)
         {
-            return GetAll.Where(s => s.FacultyId == idFaculty);
+            var result =  Convert(DataBase.SubjectRepository.Find(s => s.FacultyId == idFaculty)).ToList();
+            return result;
         }
 
         /// <summary>
@@ -136,14 +208,16 @@ namespace StudentsApp.BLL.Services
         /// <param name="idFaculty">Id faculty</param>
         /// <param name="idTeacher">Id teacher</param>
         /// <returns></returns>
-        public IEnumerable<SubjectDTO> GetSubjectsInFacultyFromTeacher(int idFaculty, int idTeacher)
+        public IEnumerable<SubjectDTO> GetSubjectsInFacultyFromTeacher(string idFaculty, string idTeacher)
         {
-            return (GetSubjectsInFaculty(idFaculty).Where(s => s.ListIdTeachers.Contains(idTeacher)));
+            var result = GetSubjectsInFaculty(idFaculty).Where(s => s.ListIdTeachers.Contains(idTeacher)).ToList();
+            return result;
         }
 
-        public IEnumerable<SubjectDTO> GetStudentSubjects(int studentId)
-        {
-            return GetAll.Where(s => s.ListIdStudents.Contains(studentId));
+        public IEnumerable<SubjectDTO> GetStudentSubjects(string studentId)
+        {            
+            var result = Convert(DataBase.SubjectRepository.Find(s => s.ListVisitSubjects.Select(ss => ss.StudentId).Contains(studentId)));
+            return result;
         }
     }
 }

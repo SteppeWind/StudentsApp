@@ -9,13 +9,13 @@ namespace StudentsApp.BLL.DTO
 {
     public class DeanDTO : PersonDTO
     {
-        public List<int> ListIdDeanFaculties { get; set; }
+        public List<string> ListIdDeanFaculties { get; set; }
 
-        public int FacultyId { get; set; }
+        public string FacultyId { get; set; }
 
         public DeanDTO()
         {
-            ListIdDeanFaculties = new List<int>();
+            ListIdDeanFaculties = new List<string>();
         }
     }
 }

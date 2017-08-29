@@ -14,6 +14,7 @@ using System.Web.Mvc;
 
 namespace StudentsApp.WEB.Controllers
 {
+    [Authorize]
     public class StudentController : Controller
     {
         private IStudentService StudentService;
@@ -23,6 +24,7 @@ namespace StudentsApp.WEB.Controllers
         private ISubjectService SubjectService;
         private ITeacherService TeacherService;
         private IDeanService DeanService;
+        private IStudentSubjectService StudentSubjectService;
 
         public StudentController(
             IStudentService studentService,
@@ -31,7 +33,8 @@ namespace StudentsApp.WEB.Controllers
             IMarkService markService,
             IFacultyService facultyService,
             ISubjectService subjectService,
-            ITeacherService teacherService)
+            ITeacherService teacherService,
+            IStudentSubjectService studentSubjectService)
         {
             StudentService = studentService;
             GroupService = groupService;
@@ -40,6 +43,7 @@ namespace StudentsApp.WEB.Controllers
             SubjectService = subjectService;
             TeacherService = teacherService;
             DeanService = deanService;
+            StudentSubjectService = studentSubjectService;
         }
 
 
@@ -53,8 +57,7 @@ namespace StudentsApp.WEB.Controllers
         }
 
         [HttpGet]
-        [Authorize]
-        public ActionResult Details(int id = 21)
+        public ActionResult Details(string id)
         {
             ComplexStudent student = new ComplexStudent();
             try
@@ -62,12 +65,12 @@ namespace StudentsApp.WEB.Controllers
                 var studentDTO = StudentService.Get(id);
                 var studentGroupsDTO = GroupService.GetStudentGroups(id);
                 var studentMarksDTO = MarkService.GetStudentMarks(id);
-                var studentSubjectsDTO = SubjectService.GetStudentSubjects(id);
+                var studentSubjectsDTO = StudentSubjectService.GetStudentSubjectsByStudentId(id).ToList();
 
                 student = BaseViewModel.UniversalConvert<StudentDTO, ComplexStudent>(studentDTO);
                 student.Groups = BaseViewModel.UniversalConvert<GroupDTO, GroupViewModel>(studentGroupsDTO).ToList();
-                student.Subjects = BaseViewModel.UniversalConvert<SubjectDTO, SubjectViewModel>(studentSubjectsDTO).ToList();
-               
+                student.StudentSubjects = BaseViewModel.UniversalConvert<StudentSubjectDTO, StudentSubjectViewModel>(studentSubjectsDTO).ToList();
+
                 foreach (var mark in studentMarksDTO)
                 {
                     MarkViewModel markVM = new MarkViewModel();
@@ -86,40 +89,43 @@ namespace StudentsApp.WEB.Controllers
             }
             catch (Exception ex)
             {
-                
+                TempData["errorMessage"] = ex.Message;
             }
-
 
             return View(student);
         }
 
 
-        [HttpGet]
-        [Authorize(Roles = "teacher, dean, admin")]
-        public ActionResult Edit(int idStudent = 21)
-        {
-            var studentVM = BaseViewModel.UniversalConvert<StudentDTO, StudentViewModel>(StudentService.Get(idStudent));
-            return View(studentVM);
-        }
+        //[HttpGet]
+        //[Authorize(Roles = "teacher, dean, admin")]
+        //public ActionResult Edit(string idStudent)
+        //{
+        //    var studentVM = BaseViewModel.UniversalConvert<StudentDTO, StudentViewModel>(StudentService.Get(idStudent));
+        //    return View(studentVM);
+        //}
 
-        [HttpPost]
-        [Authorize(Roles = "teacher, dean, admin")]
-        public ActionResult Edit(StudentViewModel student)//update student
-        {
-            if (ModelState.IsValid)
-            {
-                var studentDTO = BaseViewModel.UniversalReverseConvert<StudentViewModel, StudentDTO>(student);
-                StudentService.Update(studentDTO);
-            }
-            return View();
-        }
+        //[HttpPost]
+        //[Authorize(Roles = "teacher, dean, admin")]
+        //public ActionResult Edit(StudentViewModel student)//update student
+        //{
+        //    if (ModelState.IsValid)
+        //    {
+        //        var studentDTO = BaseViewModel.UniversalReverseConvert<StudentViewModel, StudentDTO>(student);
+        //        var result = StudentService.Update(studentDTO);
+        //        if (result.Succedeed)
+        //        {
+
+        //        }
+        //    }
+        //    return View();
+        //}
 
         [HttpGet]
         [Authorize(Roles = "teacher, dean, admin")]
         public async Task<ActionResult> Create()
         {
-            int idFaculty = 1;
-            
+            string idFaculty = string.Empty;
+
             if (User.IsInRole("teacher"))
             {
                 var teacher = await TeacherService.GetByEmailAsync(User.Identity.Name);
@@ -131,7 +137,6 @@ namespace StudentsApp.WEB.Controllers
                 var dean = await DeanService.GetByEmailAsync(User.Identity.Name);
                 idFaculty = dean.FacultyId;
             }
-
 
             var registerStudent = new RegisterStudent() { FacultyId = idFaculty };
 
@@ -146,17 +151,14 @@ namespace StudentsApp.WEB.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "teacher, dean, admin")]
-        public ActionResult Create(RegisterStudent student)//registration student
+        public async Task<ActionResult> Create(RegisterStudent student)//registration student
         {
-            student.SubjectsWithTeachers = GetAllSubjectsWithTeachers(student.FacultyId).ToList();
-            var selectedIdTeach = new List<int>();
+            var selectedIdTeach = new List<string>();
 
-            var subjects = SubjectService.GetAll.Where(s => s.FacultyId == student.FacultyId).Select(s => s.Id).ToList();
+            var subjects = SubjectService.GetSubjectsInFaculty(student.FacultyId).Select(s => s.Id).ToList();
             int length = subjects.Count;
             //ищем разность всех айдишников предметов с выбранными, нужно, что восстановить пробелы между преподавателем и его дисциплиной
-            var exceptIdSubjects = subjects.Except(student.SelectedIdSubjects.Select(s => Convert.ToInt32(s)).ToList());
-
+            var exceptIdSubjects = subjects.Except(student.SelectedIdSubjects).ToList();
 
             for (int i = 0; i < length; i++)
             {
@@ -169,68 +171,104 @@ namespace StudentsApp.WEB.Controllers
 
             if (ModelState.IsValid)
             {
-                try
+                StudentDTO studentDTO = new StudentDTO()
                 {
-                    StudentDTO studentDTO = new StudentDTO()
+                    Name = student.Name,
+                    Surname = student.Surname,
+                    MiddleName = student.MiddleName,
+                    Email = student.Email,
+                    Password = student.Password
+                };
+                OperationDetails result = await StudentService.AddAsync(studentDTO);
+                string message = result.Message + "<br>";
+
+                if (result.Succedeed)
+                {
+                    TempData["message"] += message;
+
+                    result = GroupService.AddStudentToGroupByEmail(student.IdGroup, student.Email);
+                    message = result.Message + "<br>";
+
+                    if (result.Succedeed)
                     {
-                        Name = student.Name,
-                        Surname = student.Surname,
-                        MiddleName = student.MiddleName,
-                        Email = student.Email,
-                        Password = student.Password
-                    };
-                    StudentService.Add(studentDTO);
+                        TempData["message"] += message;
 
-                    GroupService.AddStudentToGroup(student.IdGroup, student.Email);
+                        List<StudentSubjectDTO> studentSubjectsDTO = new List<StudentSubjectDTO>();
 
-                    StudentService.AddSubject(student.Email, student.SelectedIdSubjects.Select(s => Convert.ToInt32(s)).ToList(), selectedIdTeach);
+                        length = student.SelectedIdSubjects.Count;//save count selectedIdSubjects
+                        if (length == selectedIdTeach.Count)
+                        {
+                            for (int i = 0; i < length; i++)
+                            {
+                                result = await StudentSubjectService.AddByEmail(student.Email, new StudentSubjectDTO()
+                                {
+                                    SubjectId = student.SelectedIdSubjects[i],
+                                    TeacherId = selectedIdTeach[i]
+                                });
 
-                    return Redirect($@"Details/{StudentService.GetAll.Last().Id}");
+                                message = result.Message + "<br>";
+                                if (result.Succedeed)
+                                {
+                                    TempData["message"] += message;
+                                }
+                                else
+                                {
+                                    TempData["errorMessage"] += message;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        TempData["errorMessage"] += message;
+                    }
                 }
-                catch (PersonIsExistException ex)
-                {                    
-                    TempData["message"] = ex.Message;
-                }
-                catch (ValidationException ex)
+                else
                 {
-                    TempData["message"] = ex.Message;
+                    TempData["errorMessage"] += message;
                 }
+
+                return Redirect($@"Details/{(await StudentService.GetByEmailAsync(student.Email)).Id}");
             }
 
             //apply mega shit
             student.Groups = GetAllGroups(student.FacultyId);
             student.Subjects = GetAllSubjects(student.FacultyId);
+            student.SubjectsWithTeachers = GetAllSubjectsWithTeachers(student.FacultyId).ToList();
 
             return View(student);
         }
 
 
-        private List<SubjectWithTeachers> GetAllSubjectsWithTeachers(int idFaculty)
+        private List<SubjectWithTeachers> GetAllSubjectsWithTeachers(string idFaculty)
         {
             return GetAllSubjectsWithTeachers(SubjectService.GetSubjectsInFaculty(idFaculty).Select(s => s.Id));
         }
 
-        private List<SubjectWithTeachers> GetAllSubjectsWithTeachers(IEnumerable<int> subjectsId)
+        private List<SubjectWithTeachers> GetAllSubjectsWithTeachers(IEnumerable<string> subjectsId)
         {
             List<SubjectWithTeachers> result = new List<SubjectWithTeachers>();
             foreach (var item in subjectsId)
             {
                 var subject = BaseViewModel.UniversalConvert<SubjectDTO, SubjectWithTeachers>(SubjectService.Get(item));
-                var teachers = BaseViewModel.UniversalConvert<TeacherDTO, TeacherViewModel>(TeacherService.GetAll.Where(t => t.ListIdSubjects.Contains(item)));
-                subject.Teachers = teachers.ToList();
+                var teachers = BaseViewModel.UniversalConvert<TeacherDTO, TeacherViewModel>(TeacherService.GetTeachersBySubjectId(item));
 
-                result.Add(subject);
+                if (teachers.Any())
+                {
+                    subject.Teachers = teachers.ToList();
+                    result.Add(subject);
+                }
             }
 
             return result;
         }
 
         //mega shit!!!!
-        private List<SubjectViewModel> GetAllSubjects(int idFaculty) =>
+        private List<SubjectViewModel> GetAllSubjects(string idFaculty) =>
             BaseViewModel.UniversalConvert<SubjectDTO, SubjectViewModel>(SubjectService.GetSubjectsInFaculty(idFaculty)).ToList();
 
         //mega shit too!!!!
-        private List<GroupViewModel> GetAllGroups(int idFaculty) =>
+        private List<GroupViewModel> GetAllGroups(string idFaculty) =>
             BaseViewModel.UniversalConvert<GroupDTO, GroupViewModel>(GroupService.GetGroupsInFaculty(idFaculty)).ToList();
 
         // GET: Student

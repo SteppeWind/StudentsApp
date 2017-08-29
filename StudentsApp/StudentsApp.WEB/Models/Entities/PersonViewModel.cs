@@ -23,6 +23,7 @@ namespace StudentsApp.WEB.Models.Entities
         public string MiddleName { get; set; }
 
         [DisplayName("Email")]
+        [Required(ErrorMessage = "Укажите email")]
         public string Email { get; set; }
 
         [DisplayName("Пароль")]

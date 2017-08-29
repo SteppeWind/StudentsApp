@@ -9,20 +9,10 @@ namespace StudentsApp.BLL.Contracts
 {
     public interface ITeacherService : IPersonService<TeacherDTO>, IBaseService<TeacherDTO>
     {
-        void AddTeacherPost(int idTeacher, int idFaculty, int idPost);
-        void AddTeacherPost(string teacherEmail, int idFaculty, int idPost);
-        void RemoveTeacherPost(int idTeacher, int idFaculty, int idPost);
-        void UpdateTeacherPost(int idTeacher, int idFaculty, int idOldPost, int idNewPost);
-        void AddSubject(int idSubject, int idTeacher);
-        void AddSubject(IEnumerable<int> idSubjects, string teacherEmail);
-        void AddSubject(int idSubject, string teacherEmail);
-        void RemoveSubject(int idSubject, int idTeacher);
-
-        IEnumerable<TeacherFacultyDTO> GetPosts(int idTeacher);
-        IEnumerable<TeacherDTO> GetTeachersWithMinCountStudents(int idFaculty);
-        IEnumerable<TeacherDTO> GetTeachersWithAllStudents(int idFaculty);
-
-        IEnumerable<TeacherDTO> GetTeachers(int idFaculty);
+        IEnumerable<TeacherDTO> GetTeachersWithMinCountStudents(string idFaculty);
+        IEnumerable<TeacherDTO> GetTeachersWithAllStudents(string idFaculty);
+        IEnumerable<TeacherDTO> GetTeachers(string idFaculty);
+        IEnumerable<TeacherDTO> GetTeachersBySubjectId(string subjectId);
 
         //void Initialize();
         //Task InitializeAsync();

@@ -10,7 +10,7 @@ namespace StudentsApp.WEB.Models.Entities.Register
 {
     public class RegisterTeacher : RegisterVIewModel
     {
-        public int FacultyId { get; set; }
+        public string FacultyId { get; set; }
 
         [Display(Name = "Степень преподавателя")]
         public SelectList Posts { get; set; }
@@ -23,19 +23,15 @@ namespace StudentsApp.WEB.Models.Entities.Register
 
         public IEnumerable<IGrouping<string, SubjectViewModel>> GroupSubjects => Subjects.GroupBy(s => s.FacultyName);
 
-        public List<int> SelectedIdPosts { get; set; }
-
-        public List<int> SelectedIdPost { get; set; }
-        
+        public List<string> SelectedIdPosts { get; set; }       
 
         public List<string> SelectedIdSubjects { get; set; }
         
         public RegisterTeacher()
         {
 
-            SelectedIdPosts = new List<int>();
-            SelectedIdSubjects = new List<string>();
-            SelectedIdPost = new List<int>();
+            SelectedIdPosts = new List<string>();
+            SelectedIdSubjects = new List<string>();           
         }
     }
 }

@@ -8,9 +8,9 @@ namespace StudentsApp.BLL.DTO
 {
     public class DeanFacultyDTO : BaseDTO
     {
-        public int FacultyId { get; set; }
+        public string FacultyId { get; set; }
         
-        public int DeanId { get; set; }
+        public string DeanId { get; set; }
         
         public DateTime StartManage { get; set; }
 

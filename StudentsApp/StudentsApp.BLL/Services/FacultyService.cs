@@ -6,6 +6,7 @@ using StudentsApp.DAL.Entities;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Threading.Tasks;
 
 namespace StudentsApp.BLL.Services
 {
@@ -13,12 +14,19 @@ namespace StudentsApp.BLL.Services
     {
         public FacultyService(IUnitOfWork uow) : base(uow) { }
 
+
+        private bool IsFacultyExistByName(string facultyName)
+        {
+            return DataBase.FacultyRepository.Find(f => f.FacultyName.Equals(facultyName)).Any();
+        }
+
+
         /// <summary>
         /// Return faculty from id
         /// </summary>
         /// <param name="id">Unique number of faculty</param>
         /// <returns>If faculty is null, than throw ValidationException, else return faculty</returns>
-        private Faculty GetFacultyIfExist(int id)
+        private Faculty GetFacultyIfExist(string id)
         {
             var faculty = DataBase.FacultyRepository[id];
 
@@ -63,39 +71,64 @@ namespace StudentsApp.BLL.Services
             }
         }
 
+        public int Count => DataBase.FacultyRepository.Count;
+
         /// <summary>
         /// Add faculty to DB
         /// </summary>
         /// <param name="entity">added faculty DTO</param>
-        public void Add(FacultyDTO entity)
+        /// <returns></returns>
+        public async Task<OperationDetails> AddAsync(FacultyDTO entity)
         {
+            OperationDetails answer = null;
+
             //find faculty with same name, if exist, then throw ValidationException
-            if (DataBase.FacultyRepository.Find(f => f.FacultyName.Equals(entity.FacultyName)).Any())
+            if (IsFacultyExistByName(entity.FacultyName))
             {
-                throw new ValidationException($"Факультет с именем {entity.FacultyName} уже существует");
+                answer = new OperationDetails(false, $"Факультет с именем {entity.FacultyName} уже существует");
+            }
+            else
+            {
+                var faculty = ReverseConvert(entity);//convert faculty
+
+                DataBase.FacultyRepository.Add(faculty);
+                await DataBase.SaveAsync();
+                answer = new OperationDetails(true, $"Факультет {entity.FacultyName} успешно добавлен в базу");
             }
 
-            var faculty = ReverseConvert(entity);//convert faculty
-
-            DataBase.FacultyRepository.Add(faculty);
-            DataBase.Save();
+            return answer;
         }
 
         /// <summary>
         /// Full delete faculty from DB
         /// </summary>
         /// <param name="id">Id faculty</param>
-        public void FullRemove(int id)
+        /// <returns></returns>
+        public OperationDetails FullRemove(string id)
         {
-            var faculty = GetFacultyIfExist(id);
+            OperationDetails answer = null;
 
-            DataBase.DeanFacultyRepository.FullRemove(faculty.ListDeanFaculties);
-            DataBase.TeacherFacultyRepository.FullRemove(faculty.ListTeacherFaculty);
-            DataBase.GroupRepository.FullRemove(faculty.ListGroups);
-            DataBase.SubjectRepository.FullRemove(faculty.ListSubjects);
+            try
+            {
+                var faculty = GetFacultyIfExist(id);
 
-            DataBase.FacultyRepository.FullRemove(faculty);
-            DataBase.Save();
+                DataBase.DeanFacultyRepository.FullRemove(faculty.ListDeanFaculties);
+                DataBase.TeacherFacultyRepository.FullRemove(faculty.ListTeacherFaculty);
+                DataBase.GroupRepository.FullRemove(faculty.ListGroups);
+                DataBase.SubjectRepository.FullRemove(faculty.ListSubjects);
+
+                DataBase.FacultyRepository.FullRemove(faculty);
+                DataBase.Save();
+
+                answer = new OperationDetails(true, $"Факультет {faculty.FacultyName} полностью удален из базы");
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
+            }
+
+            
+            return answer;
         }
 
         /// <summary>
@@ -103,7 +136,7 @@ namespace StudentsApp.BLL.Services
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public FacultyDTO Get(int id)
+        public FacultyDTO Get(string id)
         {
             var faculty = GetFacultyIfExist(id);
 
@@ -114,21 +147,53 @@ namespace StudentsApp.BLL.Services
         /// Change value IsDelete to false for faculty
         /// </summary>
         /// <param name="id"></param>
-        public void Remove(int id)
+        /// <returns></returns>
+        public OperationDetails Remove(string id)
         {
-            var faculty = GetFacultyIfExist(id);
+            OperationDetails answer = null;
 
-            DataBase.FacultyRepository.Remove(faculty);
-            DataBase.Save();
+            try
+            {
+                var faculty = GetFacultyIfExist(id);
+
+                DataBase.FacultyRepository.Remove(faculty);
+                DataBase.Save();
+                answer = new OperationDetails(true, $"Факультет {faculty.FacultyName} помечен как 'Удалён'");
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
+            }
+
+            return answer;
         }
 
-        public void Update(FacultyDTO entity)
-        {
-            var faculty = GetFacultyIfExist(entity.Id);
 
-            faculty.FacultyName = entity.FacultyName;
-            DataBase.FacultyRepository.Update(faculty);
-            DataBase.Save();
+        public async Task<OperationDetails> UpdateAsync(FacultyDTO entity)
+        {
+            OperationDetails answer = null;
+
+            if (IsFacultyExistByName(entity.FacultyName))
+            {
+                answer = new OperationDetails(false, $"Факультет с именем {entity.FacultyName} уже существует");
+            }
+            else
+            {
+                var faculty = GetFacultyIfExist(entity.Id);
+
+                faculty.FacultyName = entity.FacultyName;
+                DataBase.FacultyRepository.Update(faculty);
+                await DataBase.SaveAsync();
+
+                answer = new OperationDetails(true, $"Информация о факультете успешно обновлена");
+            }
+
+            return answer;
+        }
+
+        public bool IsHaveSubjectFromFaculty(string subjectId, string facultyId)
+        {
+            return GetAll.FirstOrDefault(f => f.ListIdSubjects.Contains(subjectId) && facultyId == f.Id) != null;
         }
     }
 }

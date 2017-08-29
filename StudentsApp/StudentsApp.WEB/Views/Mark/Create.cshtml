@@ -12,7 +12,7 @@
     <div class="form-horizontal">
         @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
-        @if (Model.StudentId == 0)
+        @if (string.IsNullOrEmpty(Model.StudentId))
         {
             <div class="form-group">
                 @Html.LabelFor(model => model.ListStudents, htmlAttributes: new { @class = "control-label" })

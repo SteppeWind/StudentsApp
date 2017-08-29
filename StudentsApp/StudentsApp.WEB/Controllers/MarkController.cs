@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using Microsoft.AspNet.Identity;
 
 namespace StudentsApp.WEB.Controllers
 {
@@ -40,22 +41,22 @@ namespace StudentsApp.WEB.Controllers
 
 
         [HttpGet]
-        public async Task<ActionResult> Create(int? idStudent, SubjectTypeViewModel type, string returnUrl)
+        public ActionResult Create(string idStudent, SubjectTypeViewModel type, string returnUrl)
         {
             ComplexMark mark = new ComplexMark();
             mark.Type = type;
             try
             {
-                var teacherDTO = await TeacherService.GetByEmailAsync(User.Identity.Name);
+                var teacherDTO = TeacherService.Get(User.Identity.GetUserId());
                 if (idStudent != null)
                 {
-                    if (!teacherDTO.ListIdStudents.Contains((int)idStudent))
+                    if (!teacherDTO.ListIdStudents.Contains(idStudent))
                     {
                         TempData["errorMessage"] = "У вас не хватает прав на изменение";
                         return Redirect(returnUrl);
                     }
-                    mark.StudentId = (int)idStudent;
-                    ViewBag.StudentName = StudentService.Get((int)idStudent).FullName;
+                    mark.StudentId = idStudent;
+                    ViewBag.StudentName = StudentService.Get(idStudent).FullName;
 
                     mark.TeacherId = teacherDTO.Id;
                     GetInfo(mark, teacherDTO.Id, mark.StudentId);
@@ -68,40 +69,39 @@ namespace StudentsApp.WEB.Controllers
                 return Redirect(returnUrl);
             }
 
-
             return View(mark);
         }
 
 
         [HttpPost]
-        public ActionResult Create(ComplexMark mark, string returnUrl)
+        public async Task<ActionResult> Create(ComplexMark mark, string returnUrl)
         {
             if (ModelState.IsValid)
             {
-                try
+                MarkDTO markDTO = new MarkDTO();
+                //sorry, it`s very bad, but i dont know how to do differently
+                if (mark.Type == SubjectTypeViewModel.Exam)
                 {
-                    MarkDTO markDTO = new MarkDTO();
-                    //sorry, it`s very bad, but i dont know how to do differently
-                    if (mark.Type == SubjectTypeViewModel.Exam)
-                    {
-                        markDTO = BaseViewModel.UniversalReverseConvert<ComplexMark, ExamMarkDTO>(mark);
-                        (markDTO as ExamMarkDTO).Mark = byte.Parse(mark.SelectedVariant);
-                    }
-                    else
-                    {
-                        markDTO = BaseViewModel.UniversalReverseConvert<ComplexMark, TestMarkDTO>(mark);
-                        (markDTO as TestMarkDTO).IsPassed = mark.SelectedVariant == "Зачет" ? true : false;
-                    }
-
-                    MarkService.Add(markDTO);
-                    TempData["message"] = "Изменения были сохранены";
-
-                    return Redirect(returnUrl);
+                    markDTO = BaseViewModel.UniversalReverseConvert<ComplexMark, ExamMarkDTO>(mark);
+                    (markDTO as ExamMarkDTO).Mark = byte.Parse(mark.SelectedVariant);
                 }
-                catch (ValidationException)
+                else
                 {
-
+                    markDTO = BaseViewModel.UniversalReverseConvert<ComplexMark, TestMarkDTO>(mark);
+                    (markDTO as TestMarkDTO).IsPassed = mark.SelectedVariant == "Зачет" ? true : false;
                 }
+
+                var result = await MarkService.AddAsync(markDTO);
+                if (result.Succedeed)
+                {
+                    TempData["message"] = result.Message;
+                }
+                else
+                {
+                    TempData["errorMessage"] = result.Message;
+                }
+
+                return Redirect(returnUrl);
             }
 
             GetInfo(mark, mark.TeacherId, mark.StudentId);
@@ -109,11 +109,11 @@ namespace StudentsApp.WEB.Controllers
         }
 
 
-        private TMark GetInfo<TMark>(TMark markVM, int teacherId, int studentId) where TMark : ComplexMark
+        private TMark GetInfo<TMark>(TMark markVM, string teacherId, string studentId) where TMark : ComplexMark
         {
             List<SubjectViewModel> subjectsVM;
 
-            if (teacherId == 0)
+            if (string.IsNullOrEmpty(teacherId))
             {
 
                 var studentsVM = BaseViewModel.UniversalConvert<StudentDTO, StudentViewModel>(StudentService.GetAll).ToList();
@@ -124,7 +124,6 @@ namespace StudentsApp.WEB.Controllers
 
                 subjectsVM = BaseViewModel.UniversalConvert<SubjectDTO, SubjectViewModel>
                    (SubjectService.GetAll).ToList();
-
             }
             else
             {
@@ -132,9 +131,7 @@ namespace StudentsApp.WEB.Controllers
                     (SubjectService.GetAll.Where(s => s.ListIdTeachers.Contains(teacherId) && s.ListIdStudents.Contains(studentId))).ToList();
             }
 
-
             markVM.ListSubjects = new SelectList(subjectsVM, "Id", "SubjectName", markVM.SubjectId);
-
             FillOptionsMark(markVM);
 
             return markVM;
@@ -142,13 +139,13 @@ namespace StudentsApp.WEB.Controllers
 
 
         [HttpGet]
-        public async Task<ActionResult> Edit(int id = 1, string returnUrl = "")
+        public ActionResult Edit(string id, string teacherId, string returnUrl = "")
         {
             ComplexMark markVM = new ComplexMark();
             try
             {
                 var markDTO = MarkService.Get(id);
-                if (await IsContainsSubject(markDTO.SubjectId))
+                if (IsContainsSubject(markDTO.SubjectId) && User.Identity.GetUserId() == teacherId)
                 {
                     markVM = BaseViewModel.UniversalConvert<MarkDTO, ComplexMark>(markDTO);
                     string selectedValue = null;
@@ -179,26 +176,26 @@ namespace StudentsApp.WEB.Controllers
             return View(markVM);
         }
 
-        private async Task<bool> IsContainsSubject(int idSubject)
+        private bool IsContainsSubject(string idSubject)
         {
             try
             {
-                var teacher = await TeacherService.GetByEmailAsync(User.Identity.Name);
+                var teacher = TeacherService.Get(User.Identity.GetUserId());
 
                 return teacher.ListIdSubjects.Contains(idSubject);
             }
             catch (PersonNotFoundException ex)
             {
-                var dean = await DeanService.GetByEmailAsync(User.Identity.Name);
-                var faculty = FacultyService.GetAll.FirstOrDefault(f => f.ListIdSubjects.Contains(idSubject) && dean.FacultyId == f.Id);
+                var dean = DeanService.Get(User.Identity.GetUserId());                
+                var check = FacultyService.IsHaveSubjectFromFaculty(idSubject, dean.FacultyId);
 
-                if (faculty != null)
-                    return true;
+                if (!check)
+                {
+                    TempData["errorMessage"] = ex.Message;
+                }
 
-                TempData["errorMessage"] = ex.Message;
+                return check;
             }
-
-            return false;
         }
 
         //filling list for choose mark
@@ -217,64 +214,61 @@ namespace StudentsApp.WEB.Controllers
         }
 
         [HttpPost]
-        public ActionResult Edit(ComplexMark markVM, string returnUrl)
+        public async Task<ActionResult> Edit(ComplexMark markVM, string returnUrl)
         {
             if (ModelState.IsValid)
             {
-                try
+                MarkDTO markDTO = new MarkDTO();
+                if (markVM.Type == SubjectTypeViewModel.Exam)
                 {
-                    MarkDTO markDTO = new MarkDTO();
-                    if (markVM.Type == SubjectTypeViewModel.Exam)
-                    {
-                        markDTO = BaseViewModel.UniversalReverseConvert<ComplexMark, ExamMarkDTO>(markVM);
-                        (markDTO as ExamMarkDTO).Mark = byte.Parse(markVM.SelectedVariant);
-                    }
-                    else
-                    {
-                        markDTO = BaseViewModel.UniversalReverseConvert<ComplexMark, TestMarkDTO>(markVM);
-                        (markDTO as TestMarkDTO).IsPassed = markVM.SelectedVariant == "Зачет" ? true : false;
-                    }
-
-                    MarkService.Update(markDTO);
-
-                    TempData["message"] = "Изменения были сохранены";
-                    return Redirect(returnUrl);
+                    markDTO = BaseViewModel.UniversalReverseConvert<ComplexMark, ExamMarkDTO>(markVM);
+                    (markDTO as ExamMarkDTO).Mark = byte.Parse(markVM.SelectedVariant);
                 }
-                catch (ValidationException ex)
+                else
                 {
-
+                    markDTO = BaseViewModel.UniversalReverseConvert<ComplexMark, TestMarkDTO>(markVM);
+                    (markDTO as TestMarkDTO).IsPassed = markVM.SelectedVariant == "Зачет" ? true : false;
                 }
+
+                var result =  await MarkService.UpdateAsync(markDTO);
+                if (result.Succedeed)
+                {
+                    TempData["message"] = result.Message;
+                }
+                else
+                {
+                    TempData["errorMessage"] = result.Message;
+                }
+
+                return Redirect(returnUrl);
             }
 
             FillOptionsMark(markVM);
 
-            return View();
+            return View(markVM);
         }
 
 
         [HttpPost]
-        public async Task<ActionResult> Delete(int id, string returnUrl)
+        public ActionResult Delete(string id, string teacherId, string returnUrl)
         {
-            try
+            var markDTO = MarkService.Get(id);
+            if (IsContainsSubject(markDTO.SubjectId) && User.Identity.GetUserId() == teacherId)
             {
-                var markDTO = MarkService.Get(id);
-                if (await IsContainsSubject(markDTO.SubjectId))
+                var result = MarkService.FullRemove(id);
+
+                if (result.Succedeed)
                 {
-                    MarkService.FullRemove(id);
-                    TempData["message"] = "Изменения были сохранены";
+                    TempData["message"] = result.Message;
                 }
                 else
                 {
-                    TempData["errorMessage"] = "У вас не хватает прав на изменение";
+                    TempData["errorMessage"] = result.Message;
                 }
             }
-            catch (PersonNotFoundException ex)
+            else
             {
-                TempData["errorMessage"] = ex.Message;
-            }
-            catch (ValidationException ex)
-            {
-                TempData["errorMessage"] = ex.Message;
+                TempData["errorMessage"] = "У вас не хватает прав на изменение";
             }
 
             return Redirect(returnUrl);

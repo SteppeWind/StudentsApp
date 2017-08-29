@@ -12,14 +12,10 @@ namespace StudentsApp.BLL.Infrastructure
 
         public string Message { get; private set; }
 
-        public string Property { get; private set; }
-
-
-        public OperationDetails(bool succedeed, string message, string prop)
+        public OperationDetails(bool succedeed = false, string message = "Изменения не были сохранены")
         {
             Succedeed = succedeed;
             Message = message;
-            Property = prop;
         }
     }
 }

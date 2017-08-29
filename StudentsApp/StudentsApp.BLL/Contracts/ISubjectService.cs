@@ -9,8 +9,8 @@ namespace StudentsApp.BLL.Contracts
 {
     public interface ISubjectService : IBaseService<SubjectDTO>
     {
-        IEnumerable<SubjectDTO> GetSubjectsInFaculty(int idFaculty);
-        IEnumerable<SubjectDTO> GetStudentSubjects(int studentId);
-        IEnumerable<SubjectDTO> GetSubjectsInFacultyFromTeacher(int idFaculty, int idTeacher);
+        IEnumerable<SubjectDTO> GetSubjectsInFaculty(string idFaculty);
+        IEnumerable<SubjectDTO> GetStudentSubjects(string studentId);
+        IEnumerable<SubjectDTO> GetSubjectsInFacultyFromTeacher(string idFaculty, string idTeacher);
     }
 }

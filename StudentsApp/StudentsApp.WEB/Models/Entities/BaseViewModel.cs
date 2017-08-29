@@ -11,7 +11,7 @@ namespace StudentsApp.WEB.Models.Entities
     public class BaseViewModel
     {
         [HiddenInput(DisplayValue = false)]
-        public int Id { get; set; }
+        public string Id { get; set; }
 
         public bool IsDelete { get; set; }
 

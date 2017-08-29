@@ -10,13 +10,13 @@ namespace StudentsApp.WEB.Models.Entities
 {
     public class MarkViewModel : BaseViewModel
     {
-        public int StudentId { get; set; }
+        public string StudentId { get; set; }
         
-        public int SubjectId { get; set; }
+        public string SubjectId { get; set; }
         
         public string SubjectName { get; set; }
 
-        public int TeacherId { get; set; }
+        public string TeacherId { get; set; }
         
         public PersonViewModel Teacher { get; set; }
         

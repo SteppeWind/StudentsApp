@@ -20,7 +20,9 @@ namespace StudentsApp.BLL.Services
 
         public IEnumerable<DeanFacultyDTO> GetAll => Convert(DataBase.DeanFacultyRepository.GetAll);
 
-        private DeanFaculty GetDeanFacultyIfExist(int id)
+        public int Count => DataBase.DeanFacultyRepository.Count;
+
+        private DeanFaculty GetDeanFacultyIfExist(string id)
         {
             var result = DataBase.DeanFacultyRepository[id];
 
@@ -33,36 +35,73 @@ namespace StudentsApp.BLL.Services
         }
 
         /// <summary>
-        /// Add branch in history
+        /// Add branch in history faculty
         /// </summary>
         /// <param name="entity"></param>
-        public void Add(DeanFacultyDTO entity)//?*
+        /// <returns></returns>
+        public async Task<OperationDetails> AddAsync(DeanFacultyDTO entity)//?*
         {
-            var model = ReverseConvert(entity);
+            OperationDetails answer = null;
 
-            DataBase.DeanFacultyRepository.Add(model);
-            DataBase.Save();
+            try
+            {
+                var model = ReverseConvert(entity);
+                DataBase.DeanFacultyRepository.Add(model);
+                await DataBase.SaveAsync();
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
+            }
+            
+            return answer;
         }
 
-        public void FullRemove(int id)//?*
+        public OperationDetails FullRemove(string id)//?*
         {
-            var model = GetDeanFacultyIfExist(id);
+            OperationDetails answer = null;
 
-            DataBase.DeanFacultyRepository.FullRemove(model);
-            DataBase.Save();
+            try
+            {
+                var model = GetDeanFacultyIfExist(id);
+
+                DataBase.DeanFacultyRepository.FullRemove(model);
+                DataBase.Save();
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
+            }
+
+            return answer;
         }
 
-        public DeanFacultyDTO Get(int id)
+        public DeanFacultyDTO Get(string id)
         {
             return Convert(GetDeanFacultyIfExist(id));
         }
+        
 
-        public void Remove(int id)//?*
+        public OperationDetails Remove(string id)//?*
         {
-            FullRemove(id);
+            OperationDetails answer = null;
+
+            try
+            {
+                var model = GetDeanFacultyIfExist(id);
+
+                DataBase.DeanFacultyRepository.Remove(model);
+                DataBase.Save();
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
+            }
+
+            return answer;
         }
 
-        public void Update(DeanFacultyDTO entity)
+        public Task<OperationDetails> UpdateAsync(DeanFacultyDTO entity)
         {
             throw new NotImplementedException();
         }
@@ -72,7 +111,7 @@ namespace StudentsApp.BLL.Services
         /// </summary>
         /// <param name="idFaculty">Id faculty</param>
         /// <returns></returns>
-        public IEnumerable<DeanFacultyDTO> GetHistory(int idFaculty)
+        public IEnumerable<DeanFacultyDTO> GetHistory(string idFaculty)
         {
             return GetAll.Where(df => df.FacultyId == idFaculty);
         }

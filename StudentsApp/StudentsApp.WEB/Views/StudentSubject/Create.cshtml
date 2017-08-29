@@ -1,4 +1,4 @@
-﻿@model StudentsApp.WEB.Models.Entities.Edit.AddStudentToTeacherViewModel
+﻿@model StudentsApp.WEB.Models.Entities.Edit.CreateStudentSubject
 
 @{
     ViewBag.Title = "AddStudent";
@@ -7,26 +7,25 @@
 <h4>Выберите предметы и студентов, которые будут посещать данного преподавателя</h4>
 
 @using (Html.BeginForm())
-{    
+{
     @Html.HiddenFor(model => model.TeacherId)
     @Html.HiddenFor(model => model.FacultyId)
 
-    @*@Html.Hidden("id", Model.TeacherId)*@
     <div class="row">
         <div class="form-group col-md-4">
             @Html.LabelFor(model => model.Students, htmlAttributes: new { @class = "control-label" })
             @for (int i = 0; i < Model.GropedStudents.Count(); i++)
             {
                 var groupS = Model.GropedStudents.ElementAt(i);
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h4 class="panel-title">
-                            <a data-toggle="collapse" data-parent="#accordion" href="#@i">@groupS.Key</a>
-                        </h4>
-                    </div>
-                    <div id="@i" class="panel-collapse collapse in">
-                        <div class="panel-body">
-                            @foreach (var student in groupS)
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4 class="panel-title">
+                        <a data-toggle="collapse" data-parent="#accordion" href="#@i">@groupS.Key</a>
+                    </h4>
+                </div>
+                <div id="@i" class="panel-collapse collapse in">
+                    <div class="panel-body">
+                        @foreach (var student in groupS)
                             {
                                 var item = new SelectListItem()
                                 {
@@ -34,16 +33,16 @@
                                     Value = student.Id.ToString(),
                                     Selected = Model.SelectedIdSubjects.Contains(student.Id.ToString())
                                 };
-                                <div class="checkbox">
-                                    <label>
-                                        <input type="checkbox" name="SelectedIdStudents" @(item.Selected ? "checked=\"checked\"" : "") value="@item.Value" />
-                                        @item.Text
-                                    </label>
-                                </div>
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="SelectedIdStudents" @(item.Selected ? "checked=\"checked\"" : "") value="@item.Value" />
+                                    @item.Text
+                                </label>
+                            </div>
                             }
-                        </div>
                     </div>
                 </div>
+            </div>
             }
         </div>
 
@@ -66,5 +65,9 @@
             }
             <button class="btn btn-default">Сохранить</button>
         </div>
+
+        <div class="form-group col-md-10">
+            @Html.ActionLink("Вернуться назад", "Details", "Teacher", new { id = Model.TeacherId }, null)
+        </div>    
     </div>
 }

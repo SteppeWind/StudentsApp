@@ -1,4 +1,5 @@
-﻿using StudentsApp.DAL.Contracts;
+﻿using Microsoft.AspNet.Identity.EntityFramework;
+using StudentsApp.DAL.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace StudentsApp.DAL.Entities
 {
-    public class Profile : BaseEntity
+    public class Profile : IdentityUser, IDeleteEntity
     {
         public string Name { get; set; }
 
@@ -18,7 +19,7 @@ namespace StudentsApp.DAL.Entities
         /// </summary>
         public string MiddleName { get; set; }
 
-        public string Email { get; set; }
+        public bool IsDelete { get; set; }
 
         public override string ToString()
         {

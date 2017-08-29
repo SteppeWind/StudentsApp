@@ -7,6 +7,6 @@ namespace StudentsApp.WEB.Models.Entities
 {
     public class DeanViewModel : PersonViewModel
     {
-        public int FacultyId { get; set; }
+        public string FacultyId { get; set; }
     }
 }

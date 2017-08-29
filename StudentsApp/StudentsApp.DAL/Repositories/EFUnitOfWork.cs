@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using StudentsApp.DAL.Entities;
 using StudentsApp.DAL.EF;
+using StudentsApp.DAL.Identity;
+using Microsoft.AspNet.Identity.EntityFramework;
 
 namespace StudentsApp.DAL.Repositories
 {
@@ -17,7 +19,6 @@ namespace StudentsApp.DAL.Repositories
         {
             dbContext = StudentsAppContext.StudentsContext;
         }
-
 
         private AbstractRepository<DeanFaculty> deanFacultyRepository;
         public AbstractRepository<DeanFaculty> DeanFacultyRepository
@@ -33,28 +34,14 @@ namespace StudentsApp.DAL.Repositories
             }
         }
 
-        private AbstractProfileRepository<Profile> personRepository;
-        public AbstractProfileRepository<Profile> ProfileRepository
-        {
-            get
-            {
-                if (personRepository == null)
-                {
-                    personRepository = new ProfileRepository<Profile>(dbContext);
-                }
-
-                return personRepository;
-            }
-        }
-
-        private AbstractGroupRepository<Group> groupRepository;
-        public AbstractGroupRepository<Group> GroupRepository
+        private AbstractRepository<Group> groupRepository;
+        public AbstractRepository<Group> GroupRepository
         {
             get
             {
                 if (groupRepository == null)
                 {
-                    groupRepository = new GroupRepository(dbContext);
+                    groupRepository = new BaseRepository<Group>(dbContext);
                 }
 
                 return groupRepository;
@@ -82,7 +69,7 @@ namespace StudentsApp.DAL.Repositories
             {
                 if (facultyRepository == null)
                 {
-                    facultyRepository = new FacultyRepository(dbContext);
+                    facultyRepository = new BaseRepository<Faculty>(dbContext);
                 }
 
                 return facultyRepository;
@@ -103,28 +90,28 @@ namespace StudentsApp.DAL.Repositories
             }
         }
 
-        private AbstractStudentRepository<Student> studentRepository;
-        public AbstractStudentRepository<Student> StudentRepository
+        private AbstractPersonRepository<Student> studentRepository;
+        public AbstractPersonRepository<Student> StudentRepository
         {
             get
             {
                 if (studentRepository == null)
                 {
-                    studentRepository = new StudentRepository(dbContext);
+                    studentRepository = new PersonRepository<Student>(dbContext);
                 }
 
                 return studentRepository;
             }
         }
 
-        private AbstractTeacherRepository<Teacher> teacherRepository;
-        public AbstractTeacherRepository<Teacher> TeacherRepository
+        private AbstractPersonRepository<Teacher> teacherRepository;
+        public AbstractPersonRepository<Teacher> TeacherRepository
         {
             get
             {
                 if (teacherRepository == null)
                 {
-                    teacherRepository = new TeacherRepository(dbContext);
+                    teacherRepository = new PersonRepository<Teacher>(dbContext);
                 }
 
                 return teacherRepository;
@@ -138,21 +125,21 @@ namespace StudentsApp.DAL.Repositories
             {
                 if (subjectRepository == null)
                 {
-                    subjectRepository = new SubjectRepository(dbContext);
+                    subjectRepository = new BaseRepository<Subject>(dbContext);
                 }
 
                 return subjectRepository;
             }
         }
 
-        private AbstractDeanRepository<Dean> deanRepository;
-        public AbstractDeanRepository<Dean> DeanRepository
+        private AbstractPersonRepository<Dean> deanRepository;
+        public AbstractPersonRepository<Dean> DeanRepository
         {
             get
             {
                 if (deanRepository == null)
                 {
-                    deanRepository = new DeanRepository(dbContext);
+                    deanRepository = new PersonRepository<Dean>(dbContext);
                 }
 
                 return deanRepository;
@@ -173,14 +160,14 @@ namespace StudentsApp.DAL.Repositories
             }
         }
 
-        private AbstractRepository<VisitSubject> visitSubjectRepository;
-        public AbstractRepository<VisitSubject> VisitSubjectRepository
+        private AbstractRepository<StudentSubject> visitSubjectRepository;
+        public AbstractRepository<StudentSubject> StudentSubjectRepository
         {
             get
             {
                 if (visitSubjectRepository == null)
                 {
-                    visitSubjectRepository = new BaseRepository<VisitSubject>(dbContext);
+                    visitSubjectRepository = new BaseRepository<StudentSubject>(dbContext);
                 }
 
                 return visitSubjectRepository;
@@ -200,9 +187,77 @@ namespace StudentsApp.DAL.Repositories
                 return startRepository;
             }
         }
+
+        private AbstractRepository<TeacherSubject> teacherSubjectRepository;
+        public AbstractRepository<TeacherSubject> TeacherSubjectRepository
+        {
+            get
+            {
+                if (teacherSubjectRepository == null)
+                {
+                    teacherSubjectRepository = new BaseRepository<TeacherSubject>(dbContext);
+                }
+
+                return teacherSubjectRepository;
+            }
+        }
+
+        private AbstractRepository<StudentGroup> studentGroupRepository;
+        public AbstractRepository<StudentGroup> StudentGroupRepository
+        {
+            get
+            {
+                if (studentGroupRepository == null)
+                {
+                    studentGroupRepository = new BaseRepository<StudentGroup>(dbContext);
+                }
+
+                return studentGroupRepository;
+            }
+        }
+
+
+        private ApplicationProfileManager profileManager;
+        public ApplicationProfileManager ProfileManager
+        {
+            get
+            {
+                if (profileManager == null)
+                {
+                    profileManager = new ApplicationProfileManager(new UserStore<Profile>(dbContext));
+                }
+
+                return profileManager;
+            }
+        }
+
+        private ApplicationRoleManager roleManager;
+        public ApplicationRoleManager RoleManager
+        {
+            get
+            {
+                if (roleManager == null)
+                {
+                    roleManager = new ApplicationRoleManager(new RoleStore<ApplicationRole>(dbContext));
+                }
+
+                return roleManager;
+            }
+        }
+
         public void Save()
         {
             dbContext.SaveChanges();
+        }
+
+        public async Task SaveAsync()
+        {
+            await dbContext.SaveChangesAsync();
+        }
+
+        public void Dispose()
+        {
+            dbContext.Dispose();
         }
     }
 }

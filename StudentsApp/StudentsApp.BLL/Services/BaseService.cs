@@ -48,7 +48,9 @@ namespace StudentsApp.BLL.Services
             return Mapper.Map<TEntity, TEntityDTO>(entity);
         }
 
-        protected T1 Map<T1, T2>(T2 t2) where T1 : class where T2 : class
+        protected T1 Map<T1, T2>(T2 t2)
+            where T1 : class
+            where T2 : class
         {
             Mapper.Initialize(cfg => cfg.CreateMap<T2, T1>());
             return Mapper.Map<T2, T1>(t2);

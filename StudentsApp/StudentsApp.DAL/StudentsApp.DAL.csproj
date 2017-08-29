@@ -53,21 +53,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Contracts\AbstractDeanRepository.cs" />
-    <Compile Include="Contracts\AbstractGroupRepository.cs" />
     <Compile Include="Contracts\AbstractPersonRepository.cs" />
-    <Compile Include="Contracts\AbstractProfileRepository.cs" />
     <Compile Include="Contracts\AbstractRepository.cs" />
-    <Compile Include="Contracts\AbstractStudentRepository.cs" />
-    <Compile Include="Contracts\AbstractTeacherRepository.cs" />
-    <Compile Include="Contracts\IIndentityUnitOfWork.cs" />
-    <Compile Include="Contracts\IPersonRepository.cs" />
+    <Compile Include="Contracts\IBaseEntity.cs" />
+    <Compile Include="Contracts\IDeleteEntity.cs" />
     <Compile Include="Contracts\IStartRepository.cs" />
-    <Compile Include="Contracts\Profile.cs" />
-    <Compile Include="EF\IdentityContext.cs" />
     <Compile Include="EF\StudentsAppContext.cs" />
     <Compile Include="Entities\ApplicationRole.cs" />
-    <Compile Include="Entities\ApplicationUser.cs" />
     <Compile Include="Entities\BaseEntity.cs" />
     <Compile Include="Entities\Dean.cs" />
     <Compile Include="Entities\DeanFaculty.cs" />
@@ -79,27 +71,22 @@
     <Compile Include="Entities\Profile.cs" />
     <Compile Include="Entities\PostTeacher.cs" />
     <Compile Include="Entities\Student.cs" />
+    <Compile Include="Entities\StudentGroup.cs" />
     <Compile Include="Entities\Subject.cs" />
     <Compile Include="Entities\SubjectType.cs" />
     <Compile Include="Entities\Teacher.cs" />
     <Compile Include="Entities\TeacherFaculty.cs" />
+    <Compile Include="Entities\TeacherSubject.cs" />
     <Compile Include="Entities\TestMark.cs" />
     <Compile Include="Contracts\IUnitOfWork.cs" />
-    <Compile Include="Entities\VisitSubject.cs" />
+    <Compile Include="Entities\StudentSubject.cs" />
     <Compile Include="Identity\ApplicationRoleManager.cs" />
-    <Compile Include="Identity\ApplicationUserManager.cs" />
+    <Compile Include="Identity\ApplicationProfileManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Repositories\BaseRepository.cs" />
-    <Compile Include="Repositories\DeanRepository.cs" />
     <Compile Include="Repositories\EFUnitOfWork.cs" />
-    <Compile Include="Repositories\FacultyRepository.cs" />
-    <Compile Include="Repositories\GroupRepository.cs" />
-    <Compile Include="Repositories\IndentityUnitOfWork.cs" />
-    <Compile Include="Repositories\ProfileRepository.cs" />
+    <Compile Include="Repositories\PersonRepository.cs" />
     <Compile Include="Repositories\StartRepository.cs" />
-    <Compile Include="Repositories\StudentRepository.cs" />
-    <Compile Include="Repositories\SubjectRepository.cs" />
-    <Compile Include="Repositories\TeacherRepository.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

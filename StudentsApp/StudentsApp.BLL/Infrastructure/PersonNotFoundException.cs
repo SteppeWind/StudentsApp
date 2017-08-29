@@ -17,5 +17,7 @@ namespace StudentsApp.BLL.Infrastructure
             IdPerson = id;
             Email = email;
         }
+
+        public PersonNotFoundException(string message) : base(message) { }
     }
 }

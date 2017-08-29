@@ -1,5 +1,6 @@
 ﻿using StudentsApp.BLL.DTO;
 using StudentsApp.BLL.Infrastructure;
+using StudentsApp.DAL.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,10 +10,12 @@ using System.Threading.Tasks;
 
 namespace StudentsApp.BLL.Contracts
 {
-    public interface IUserService : IDisposable
+    public interface IUserService
     {
-        Task<OperationDetails> Create(PersonDTO person);
         Task<ClaimsIdentity> Authenticate(PersonDTO person);
-        Task SetInitialData(PersonDTO adminDto, List<string> roles);
+        Task SetRoles(List<string> roles);
+        Task SetRoles(params string[] roles);
+        Task<OperationDetails> UpdateProfile(PersonDTO person);
+        Task<PersonDTO> Get(string id);
     }
 }

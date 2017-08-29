@@ -9,9 +9,9 @@ namespace StudentsApp.WEB.Models.Entities.Edit
 {
     public class AddSubjectToStudentViewModel
     {
-        public int StudentId { get; set; }
+        public string StudentId { get; set; }
 
-        public int TeacherId { get; set; }
+        public string TeacherId { get; set; }
 
         [Display(Name ="Список доступных дисциплин")]
         public SelectList ListSubjects { get; set; }

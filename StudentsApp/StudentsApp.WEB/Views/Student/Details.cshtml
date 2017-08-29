@@ -3,6 +3,7 @@
 @using Microsoft.AspNet.Identity;
 @{
     ViewBag.Title = "GetStudent";
+    bool checkIfMoreStudent = User.Identity.IsAuthenticated && !User.IsInRole("student");
 }
 <br />
 
@@ -10,7 +11,7 @@
     <h3>@Model.FullName</h3>
     <h4>@Model.Email</h4>
     <h4>Средний балл - @Model.AverageMark</h4>
-    @if (User.Identity.IsAuthenticated && !User.IsInRole("student"))
+    @if (checkIfMoreStudent)
     {
         using (Html.BeginForm("Edit", "Account", FormMethod.Get))
         {
@@ -49,30 +50,26 @@
             <tr>
                 <th>Название</th>
                 <th>Факультет</th>
-                @if (User.Identity.IsAuthenticated && !User.IsInRole("student"))
+                <th>Преподаватель</th>
+                @if (checkIfMoreStudent)
                 {
                     <th>Действия</th>
                 }
             </tr>
         </thead>
         <tbody>
-            @foreach (var subject in Model.Subjects)
+            @foreach (var subject in Model.StudentSubjects)
             {
                 <tr>
-                    <td>@subject.SubjectName</td>
-                    <td>@subject.FacultyName</td>
-                    @if (User.Identity.IsAuthenticated && !User.IsInRole("student"))
+                    <td>@Html.ActionLink(subject.FullTeacherName, "Details", "Teacher", new { id = subject.TeacherId }, null)</td>
+                    @if (checkIfMoreStudent)
                     {
-                        <td>
-                            @using (Html.BeginForm("RemoveSubjectFromStudent", "Teacher", FormMethod.Post))
-                            {
-                                @Html.Hidden("idStudent", Model.Id);
-                                @Html.Hidden("idSubject", subject.Id)
-                                @Html.Hidden("returnUrl", Request.Url)
-                                <button class="btn btn-default glyphicon glyphicon-remove"></button>
-                            }
-                        </td>
+                        @Html.Action("Delete", "StudentSubject", new { id = subject.Id });
                     }
+                    else
+                    {
+                        @Html.Action("Details", "StudentSubject", new { id = subject.Id });
+                    }                    
                 </tr>
             }
         </tbody>
@@ -100,7 +97,7 @@
                 <th>Оценка</th>
                 <th>Семестр</th>
                 <th>Преподаватель</th>
-                @if (User.Identity.IsAuthenticated && !User.IsInRole("student"))
+                @if (checkIfMoreStudent)
                 {
                     <th>Действия</th>
                 }
@@ -132,13 +129,14 @@
                     }
                     <td>@exam.SemesterNumber</td>
                     <td>@exam.Teacher.Abbr</td>
-                    @if (User.Identity.IsAuthenticated && !User.IsInRole("student"))
+                    @if (checkIfMoreStudent)
                     {
                         <td>
                             <div class="row">
                                 <div class="col-md-3">
                                     <form action="/Mark/Edit" method="get">
                                         <input type="hidden" name="id" value="@exam.Id" />
+                                        <input type="hidden" name="teacherId" value="@exam.TeacherId"/>
                                         <input type="hidden" name="returnUrl" value="@Request.Url" />
                                         <button class="btn btn-default glyphicon glyphicon-refresh"></button>
                                     </form>
@@ -146,6 +144,7 @@
                                 <div class="col-md-3">
                                     <form action="/Mark/Delete" method="post">
                                         <input type="hidden" name="id" value="@exam.Id" />
+                                        <input type="hidden" name="teacherId" value="@exam.TeacherId" />
                                         <input type="hidden" name="returnUrl" value="@Request.Url" />
                                         <button class="btn btn-default glyphicon glyphicon-remove"></button>
                                     </form>

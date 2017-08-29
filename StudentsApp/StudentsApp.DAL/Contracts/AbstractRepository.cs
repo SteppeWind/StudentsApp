@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace StudentsApp.DAL.Contracts
 {
-    public abstract class AbstractRepository<TEntity> where TEntity : BaseEntity
+    public abstract class AbstractRepository<TEntity> where TEntity : IBaseEntity
     {
         public abstract void Add(TEntity entity);
 
@@ -16,13 +16,17 @@ namespace StudentsApp.DAL.Contracts
 
         public abstract IEnumerable<TEntity> GetAll { get; }
 
-        public abstract IEnumerable<TEntity> Find(Func<TEntity, Boolean> predicate);       
+        public abstract IEnumerable<TEntity> Find(Func<TEntity, Boolean> predicate);
 
-        public abstract TEntity GetById(int id);
+        public abstract TEntity FindFirst(Func<TEntity, Boolean> predicate);
 
-        public TEntity this[int id] => GetById(id);
+        public abstract TEntity GetById(string id);
 
-        public void Remove(int id) => Remove(this[id]);
+        public abstract int Count { get; }
+
+        public TEntity this[string id] => GetById(id);
+
+        public void Remove(string id) => Remove(this[id]);
 
         public void Remove(IEnumerable<TEntity> rangeEntity)
         {
@@ -32,7 +36,7 @@ namespace StudentsApp.DAL.Contracts
             }
         }
 
-        public void FullRemove(int id) => FullRemove(this[id]);
+        public void FullRemove(string id) => FullRemove(this[id]);
 
         public void FullRemove(IEnumerable<TEntity> rangeEntity)
         {
@@ -40,6 +44,6 @@ namespace StudentsApp.DAL.Contracts
             {
                 FullRemove(item);
             }
-        }
+        }      
     }
 }

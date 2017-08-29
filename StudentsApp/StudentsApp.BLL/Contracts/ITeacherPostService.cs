@@ -9,6 +9,6 @@ namespace StudentsApp.BLL.Contracts
 {
     public interface ITeacherPostService : IBaseService<PostTeacherDTO>
     {
-
+        IEnumerable<PostTeacherDTO> GetPostsForTeacher(string teacherId);
     }
 }

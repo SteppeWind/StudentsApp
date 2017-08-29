@@ -16,25 +16,13 @@ namespace StudentsApp.BLL.Contracts
 {
     public class PersonService<TPersonDTO, TPerson> : BaseService<TPersonDTO, TPerson>
         where TPersonDTO : PersonDTO, new()
-        where TPerson : Person
+        where TPerson : Person, new()
     {
-        protected IIndentityUnitOfWork IdentityDataBase { get; set; }
-
-        public PersonService(IUnitOfWork uow, IIndentityUnitOfWork iouw) : base(uow)
+        public PersonService(IUnitOfWork uow) : base(uow) { }
+       
+        protected Task<DAL.Entities.Profile> GetAppUserByEmail(string email)
         {
-            IdentityDataBase = iouw;
-        }
-
-        protected Task<IEnumerable<ApplicationUser>> GetAppUsersByPassword(string password)
-        {
-            return Task.Run(() => IdentityDataBase.UserManager.Users
-            .Where(appUser => appUser.PasswordHash.Equals(password))
-            .AsEnumerable());
-        }
-
-        protected Task<ApplicationUser> GetAppUserByEmail(string email)
-        {
-            return Task.Run(() => IdentityDataBase.UserManager.FindByEmailAsync(email));
+            return Task.Run(() => DataBase.ProfileManager.FindByEmailAsync(email));
         }
 
         protected Task<IEnumerable<TPersonDTO>> ConvertAsync(IEnumerable<TPerson> entyties) 
@@ -46,13 +34,34 @@ namespace StudentsApp.BLL.Contracts
         {
             return Task.Run(() => Convert(entity));
         }
+
+        protected async Task<TPerson> Create<TProfile>(TPersonDTO person) where TProfile : DAL.Entities.Profile
+        {
+            TProfile profile = Map<TProfile, TPersonDTO>(person);
+            profile.UserName = profile.Email;
+            profile.Id = BaseEntity.GenerateId;
+
+            await DataBase.ProfileManager.CreateAsync(profile, person.Password);
+
+            TPerson result = new TPerson();
+            result.Profile = profile;
+
+            return result;
+        }
         
+        protected async Task<bool> DeleteProfile<TProfile>(TProfile profile) where TProfile : DAL.Entities.Profile
+        {
+            await DataBase.ProfileManager.RemoveFromRoleAsync(profile.Id, profile.Roles.First().RoleId);
+            await DataBase.ProfileManager.DeleteAsync(profile);
+            return true;
+        }
+
         protected TProfile UpdatePerson<TProfile>(TPersonDTO person, TProfile profile) where TProfile : DAL.Entities.Profile
         {
             profile.Name = person.Name;
             profile.Surname = person.Surname;
             profile.MiddleName = person.MiddleName;
-            //profile.Email = person.Email;
+            profile.Email = person.Email;
            
             return profile;
         }
@@ -60,10 +69,8 @@ namespace StudentsApp.BLL.Contracts
         protected override TPersonDTO Convert(TPerson entity)
         {
             TPersonDTO personDTO  = base.Convert(entity);
-            var appUsers = IdentityDataBase.UserManager.Users.Select(au => new { au.Email, au.PasswordHash, au.Id });
-
-            personDTO.Id = entity.Id;
-            personDTO.IsDelete = entity.IsDelete;
+            var appUsers = DataBase.ProfileManager.Users.Select(au => new { au.Email, au.PasswordHash, au.Id });
+            
             personDTO.Name = entity.Profile.Name;
             personDTO.Surname = entity.Profile.Surname;
             personDTO.Email = entity.Profile.Email;
@@ -84,44 +91,8 @@ namespace StudentsApp.BLL.Contracts
         
         protected bool PersonIsExist(TPersonDTO person)
         {
-            var defUser = DataBase.ProfileRepository.GetByEmail(person.Email);//user from first DB
-            var appUser = IdentityDataBase.UserManager.FindByEmail(person.Email);//user from second DB
-
-            return defUser != null || appUser != null ? true : false;
-        }
-
-        public void Delete(TPerson person)
-        {
-            var appTeacher = IdentityDataBase.UserManager.FindByEmailAsync(person.Profile.Email);
-            IdentityDataBase.UserManager.Delete(appTeacher.Result);
-            IdentityDataBase.Save();
-        }
-
-        public void Create(TPersonDTO person)
-        {
-            ApplicationUser user = new ApplicationUser() { Email = person.Email, UserName = person.Email };
-            var result = IdentityDataBase.UserManager.Create(user, person.Password);
-            IdentityDataBase.Save();
-            IdentityDataBase.UserManager.AddToRoles(user.Id, person.Role);
-            IdentityDataBase.Save();
-        }
-
-        protected void Initial()
-        {
-            foreach (var item in DataBase.ProfileRepository.GetAll)
-            {
-                var res = IdentityDataBase.UserManager.Create(new ApplicationUser() {UserName = item.Name,  Email = item.Email }, "qwe123");
-            }
-            IdentityDataBase.Save();
-        }
-
-        protected async Task InitialAsync()
-        {
-            foreach (var item in DataBase.ProfileRepository.GetAll)
-            {
-                var res = await IdentityDataBase.UserManager.CreateAsync(new ApplicationUser() { Email = item.Email }, "qwe123");
-            }
-            await IdentityDataBase.SaveAsync();
+            var appUser = DataBase.ProfileManager.FindByEmail(person.Email);//user from DB
+            return appUser != null ? true : false;
         }
     }
 }

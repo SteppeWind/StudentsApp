@@ -9,7 +9,7 @@ namespace StudentsApp.WEB.Models.Entities
     {
         public string SubjectName { get; set; }
         
-        public int FacultyId { get; set; }
+        public string FacultyId { get; set; }
 
         public string FacultyName { get; set; }
     }

@@ -8,19 +8,19 @@ namespace StudentsApp.BLL.DTO
 {
     public class TeacherDTO : PersonDTO
     {
-        public List<int> ListIdSubjects { get; set; }
+        public List<string> ListIdSubjects { get; set; }
 
-        public List<int> ListIdStudents { get; set; }
+        public List<string> ListIdStudents { get; set; }
 
-        public List<int> ListIdFaculties { get; set; }
+        public List<string> ListIdFaculties { get; set; }
 
         public int CountStudents { get; set; }
 
         public TeacherDTO()
         {
-            ListIdSubjects = new List<int>();
-            ListIdStudents = new List<int>();
-            ListIdFaculties = new List<int>();
+            ListIdSubjects = new List<string>();
+            ListIdStudents = new List<string>();
+            ListIdFaculties = new List<string>();
             Role = "teacher";
         }
     }

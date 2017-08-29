@@ -1,0 +1,15 @@
+﻿@model StudentsApp.WEB.Models.Entities.TeacherSubjectViewModel
+
+@*@Html.Action("Details", "TeacherSubject", new { id = Model.Id })*@
+@Html.Partial("Details", Model)
+<td>
+    @using (Html.BeginForm("Delete", "TeacherSubject", FormMethod.Post))
+    {
+        @Html.HiddenFor(m => m.Id)
+        @Html.HiddenFor(m => m.TeacherId)
+        @Html.HiddenFor(m => m.SubjectId)
+        @Html.HiddenFor(m => m.FacultyId)
+        @Html.Hidden("returnUrl", Request.Url.PathAndQuery)
+        <button class="btn btn-default glyphicon glyphicon-remove"></button>
+    }
+</td>   

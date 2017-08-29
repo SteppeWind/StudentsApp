@@ -15,7 +15,7 @@ namespace StudentsApp.BLL.Services
     {
         public TeacherPostService(IUnitOfWork uow) : base(uow) { }
 
-        private PostTeacher GetTeacherPostIfExist(int id)
+        private PostTeacher GetTeacherPostIfExist(string id)
         {
             var model = DataBase.PostTeacherRepository[id];
 
@@ -25,33 +25,43 @@ namespace StudentsApp.BLL.Services
             }
 
             return model;
-        } 
+        }  
 
         public IEnumerable<PostTeacherDTO> GetAll => Convert(DataBase.PostTeacherRepository.GetAll);
 
-        public void Add(PostTeacherDTO entity)
+        public int Count => DataBase.PostTeacherRepository.Count;
+
+        public Task<OperationDetails> AddAsync(PostTeacherDTO entity)
         {
             throw new NotImplementedException();
         }
 
-        public void FullRemove(int id)
+        public OperationDetails FullRemove(string id)
         {
             throw new NotImplementedException();
         }
 
-        public PostTeacherDTO Get(int id)
+        public PostTeacherDTO Get(string id)
         {
             return Convert(DataBase.PostTeacherRepository[id]);
         }
 
-        public void Remove(int id)
+        public OperationDetails Remove(string id)
         {
             throw new NotImplementedException();
         }
 
-        public void Update(PostTeacherDTO entity)
+        public Task<OperationDetails> UpdateAsync(PostTeacherDTO entity)
         {
             throw new NotImplementedException();
+        }
+
+        public IEnumerable<PostTeacherDTO> GetPostsForTeacher(string teacherId)
+        {
+            return Convert(DataBase.PostTeacherRepository
+                .Find(tp => tp.ListTeacherFaculties
+                                .Select(tf => tf.TeacherId)
+                                .Contains(teacherId)));
         }
     }
 }

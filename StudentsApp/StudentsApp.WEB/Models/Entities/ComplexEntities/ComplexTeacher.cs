@@ -7,17 +7,19 @@ namespace StudentsApp.WEB.Models.Entities.ComplexEntities
 {
     public class ComplexTeacher : TeacherViewModel
     {
-        public List<SubjectViewModel> Subjects { get; set; }
+        public List<TeacherSubjectViewModel> TeacherSubjects { get; set; }
 
         public List<TeacherFacultyVIewModel> Posts { get; set; }
         
-        public List<SubjectWithStudents> StudentsSubjects { get; set; }
+        public List<ComplexStudentSubject> StudentsSubjects { get; set; }
+
+        public IEnumerable<IGrouping<string, ComplexStudentSubject>> GroupedStudentsSubjects => StudentsSubjects.GroupBy(ss => ss.SubjectName);
 
         public ComplexTeacher()
         {
-            Subjects = new List<SubjectViewModel>();
+            TeacherSubjects = new List<TeacherSubjectViewModel>();
             Posts = new List<TeacherFacultyVIewModel>();
-            StudentsSubjects = new List<SubjectWithStudents>();
+            StudentsSubjects = new List<ComplexStudentSubject>();
         }
     }
 }

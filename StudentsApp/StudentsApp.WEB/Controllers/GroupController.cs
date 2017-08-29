@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using Microsoft.AspNet.Identity;
 
 namespace StudentsApp.WEB.Controllers
 {
@@ -33,18 +34,18 @@ namespace StudentsApp.WEB.Controllers
         {
             if (ModelState.IsValid)
             {
-                try
+                if (IsCorrectDean(group.FacultyId))
                 {
-                    if (await IsCorrectDean(group.FacultyId))
+                    var groupDTO = BaseViewModel.UniversalReverseConvert<GroupViewModel, GroupDTO>(group);
+                    var result = await GroupService.AddAsync(groupDTO);
+                    if (result.Succedeed)
                     {
-                        var groupDTO = BaseViewModel.UniversalReverseConvert<GroupViewModel, GroupDTO>(group);
-                        GroupService.Add(groupDTO);
-                        TempData["message"] = "Изменения были сохранены";
+                        TempData["message"] = result.Message;
                     }
-                }
-                catch (Exception ex)
-                {
-                    TempData["errorMessage"] = ex.Message;
+                    else
+                    {
+                        TempData["errorMessage"] = result.Message;
+                    }
                 }
             }
 
@@ -54,26 +55,26 @@ namespace StudentsApp.WEB.Controllers
         [HttpPost]
         public async Task<ActionResult> Edit(GroupViewModel group, string returnUrl)
         {
-            try
+            if (IsCorrectDean(group.FacultyId))
             {
-                if (await IsCorrectDean(group.FacultyId))
+                var groupDTO = BaseViewModel.UniversalReverseConvert<GroupViewModel, GroupDTO>(group);
+                var result = await GroupService.UpdateAsync(groupDTO);
+                if (result.Succedeed)
                 {
-                    var groupDTO = BaseViewModel.UniversalReverseConvert<GroupViewModel, GroupDTO>(group);
-                    GroupService.Update(groupDTO);
-                    TempData["message"] = "Изменения были сохранены";
+                    TempData["message"] = result.Message;
                 }
-            }
-            catch (Exception ex)
-            {
-                TempData["errorMessage"] = ex.Message;
+                else
+                {
+                    TempData["errorMessage"] = result.Message;
+                }
             }
 
             return Redirect(returnUrl);
         }
 
-        private async Task<bool> IsCorrectDean(int idfaculty)
+        private bool IsCorrectDean(string idfaculty)
         {
-            var deanDTO = await DeanService.GetByEmailAsync(User.Identity.Name);
+            var deanDTO = DeanService.Get(User.Identity.GetUserId());
 
             if (deanDTO.FacultyId == idfaculty)
             {

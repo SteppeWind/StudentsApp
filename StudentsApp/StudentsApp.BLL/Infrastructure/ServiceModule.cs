@@ -13,18 +13,15 @@ namespace StudentsApp.BLL.Infrastructure
     public class ServiceModule : NinjectModule
     {
         private StudentsAppContext dbContext;
-        private IdentityContext identityContext;
 
         public ServiceModule()
         {
             dbContext = StudentsAppContext.StudentsContext;
-            identityContext = IdentityContext.IdentityUserContext;
         }
 
         public override void Load()
         {
             Bind<IUnitOfWork>().To<EFUnitOfWork>();
-            Bind<IIndentityUnitOfWork>().To<IndentityUnitOfWork>();
         }
     }
 }

@@ -12,7 +12,7 @@ namespace StudentsApp.WEB.Models.Entities
         [Display(Name ="Название группы")]
         public string GroupName { get; set; }        
         
-        public int FacultyId { get; set; }
+        public string FacultyId { get; set; }
 
         public string FacultyName { get; set; }
     }

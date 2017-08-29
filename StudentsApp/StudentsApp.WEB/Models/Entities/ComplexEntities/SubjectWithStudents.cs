@@ -7,7 +7,7 @@ namespace StudentsApp.WEB.Models.Entities.ComplexEntities
 {
     public class SubjectWithStudents : SubjectViewModel
     {
-        public List<StudentViewModel> Students { get; set; }
+        public IEnumerable<StudentViewModel> Students { get; set; }
 
         public SubjectWithStudents()
         {

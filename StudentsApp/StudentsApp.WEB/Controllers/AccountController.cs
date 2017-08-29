@@ -15,7 +15,6 @@ namespace StudentsApp.WEB.Controllers
 {
     public class AccountController : Controller
     {
-
         private IUserService UserService;
         private IStudentService StudentService;
         private ITeacherService TeacherService;
@@ -46,7 +45,6 @@ namespace StudentsApp.WEB.Controllers
         [AllowAnonymous]
         public ActionResult Login(string returnUrl)
         {
-            ViewBag.returnUrl = returnUrl;
             return View();
         }
 
@@ -61,7 +59,7 @@ namespace StudentsApp.WEB.Controllers
                     Email = loginModel.Email,
                     Password = loginModel.Password
                 });
-                
+
                 if (claim == null)
                 {
                     ModelState.AddModelError("", "Неверный логин или пароль");
@@ -83,31 +81,38 @@ namespace StudentsApp.WEB.Controllers
         #endregion 
 
         [HttpGet]
-        [Authorize(Roles = "teacher, dean, admin")]
-        public ActionResult Edit(int idPerson = 1, string returnUrl = "")
+        public async Task<ActionResult> Edit(string idPerson = "", string returnUrl = "")
         {
             ViewBag.ReturnUrl = returnUrl;
-            var personVM = BaseViewModel.UniversalConvert<StudentDTO, PersonViewModel>(StudentService.Get(idPerson));
+            var personVM = BaseViewModel.UniversalConvert<PersonDTO, PersonViewModel>(await UserService.Get(idPerson));
             return View(personVM);
         }
 
-
         [HttpPost]
-        [Authorize(Roles = "teacher, dean, admin")]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(PersonViewModel person, string returnUrl)
+        public async Task<ActionResult> Edit(PersonViewModel person, string returnUrl)
         {
             if (ModelState.IsValid)
             {
-                var studentDTO = BaseViewModel.UniversalReverseConvert<PersonViewModel, StudentDTO>(person);
-                StudentService.Update(studentDTO);
-                TempData["message"] = "Изменения были сохранены";
-                return Redirect(returnUrl);
+                var profile = BaseViewModel.UniversalReverseConvert<PersonViewModel, PersonDTO>(person);
+                var result = await UserService.UpdateProfile(profile);
+
+                if (result.Succedeed)
+                {
+                    TempData["message"] = result.Message;
+                }
+                else
+                {
+                    TempData["errorMessage"] = result.Message;
+                    return View(person);
+                }
             }
             else
             {
-                return View();
+                return View(person);
             }
+
+            return Redirect(returnUrl);
         }
 
         // GET: Account
@@ -116,25 +121,23 @@ namespace StudentsApp.WEB.Controllers
             return View();
         }
 
-
-        public async Task<ActionResult> Details()
+        public ActionResult Details()
         {
+            string Id = User.Identity.GetUserId();
+
             if (User.IsInRole("student"))
             {
-                var student = await StudentService.GetByEmailAsync(User.Identity.Name);
-                return RedirectToAction("Details", "Student", new { id = student.Id });
+                return RedirectToAction("Details", "Student", new { id = Id });
             }
 
             if (User.IsInRole("teacher"))
             {
-                var teacher = await TeacherService.GetByEmailAsync(User.Identity.Name);
-                return RedirectToAction("Details", "Teacher", new { id = teacher.Id });
+                return RedirectToAction("Details", "Teacher", new { id = Id });
             }
 
             if (User.IsInRole("dean"))
             {
-                var dean = await DeanService.GetByEmailAsync(User.Identity.Name);
-                return RedirectToAction("Details", "Dean", new { id = dean.Id });
+                return RedirectToAction("Details", "Dean", new { id = Id });
             }
 
             return View();
