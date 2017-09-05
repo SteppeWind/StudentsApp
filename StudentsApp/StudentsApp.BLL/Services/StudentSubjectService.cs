@@ -8,6 +8,7 @@ using StudentsApp.BLL.DTO;
 using StudentsApp.BLL.Infrastructure;
 using StudentsApp.DAL.Entities;
 using StudentsApp.DAL.Contracts;
+using StudentsApp.BLL.Message;
 
 namespace StudentsApp.BLL.Services
 {
@@ -47,7 +48,7 @@ namespace StudentsApp.BLL.Services
 
             if (model == null)
             {
-                throw new ValidationException("Студент не найден");
+                throw new ValidationException(new StudentMessage().NotFound());
             }
 
             return model;
@@ -59,7 +60,7 @@ namespace StudentsApp.BLL.Services
 
             if (result == null)
             {
-                throw new ValidationException("Дисциплина не найдена");
+                throw new ValidationException(new SubjectMessage().NotFound());
             }
 
             return result;
@@ -86,7 +87,7 @@ namespace StudentsApp.BLL.Services
 
                 if (IsStudentSubjectExist(entity.StudentId, entity.SubjectId))
                 {
-                    answer = new OperationDetails(false, $"Предмет '{subject.SubjectName}' уже изучается студентом '{student.Profile}'");
+                    answer = new OperationDetails(false, $"Предмет \"{subject.SubjectName}\" уже изучается студентом \"{student.Profile}\"");
                 }
                 else
                 {
@@ -94,7 +95,7 @@ namespace StudentsApp.BLL.Services
                     result.Id = BaseEntity.GenerateId;
                     DataBase.StudentSubjectRepository.Add(result);
                     await DataBase.SaveAsync();
-                    answer = new OperationDetails(true, $"Предмет '{subject.SubjectName}' успешно добавлен студенту '{student.Profile}'");
+                    answer = new OperationDetails(true, $"Предмет \"{subject.SubjectName}\" успешно добавлен студенту \"{student.Profile}\"");
                 }
             }
             catch (Exception ex)
@@ -133,7 +134,7 @@ namespace StudentsApp.BLL.Services
             {
                 var model = GetStudentSubjectIfExistById(id);
 
-                answer = new OperationDetails(true, $"Предмет '{model.Subject.SubjectName}' у студента '{model.Student.Profile}' полностью удалён из базы");
+                answer = new OperationDetails(true, $"Предмет \"{model.Subject.SubjectName}\" у студента \"{model.Student.Profile}\" полностью удалён из базы");
                 DataBase.StudentSubjectRepository.FullRemove(model);
                 DataBase.Save();
             }
@@ -160,7 +161,7 @@ namespace StudentsApp.BLL.Services
 
                 DataBase.StudentSubjectRepository.Remove(model);
                 DataBase.Save();
-                answer = new OperationDetails(true, $"Предмет '{model.Subject.SubjectName}' у студента '{model.Student.Profile}' помечен в базе как 'Удалён'");
+                answer = new OperationDetails(true, $"Предмет \"{model.Subject.SubjectName}\" у студента \"{model.Student.Profile}\" помечен в базе как 'Удалён'");
             }
             catch (Exception ex)
             {
@@ -184,7 +185,7 @@ namespace StudentsApp.BLL.Services
 
                 DataBase.StudentSubjectRepository.Update(model);
                 await DataBase.SaveAsync();
-                answer = new OperationDetails(true, $"Предмет '{model.Subject.SubjectName}' успешно обновлен");
+                answer = new OperationDetails(true, $"Предмет \"{model.Subject.SubjectName}\" успешно обновлен");
             }
             catch (Exception ex)
             {

@@ -9,6 +9,7 @@ using StudentsApp.DAL.Contracts;
 using AutoMapper;
 using StudentsApp.DAL.Entities;
 using StudentsApp.BLL.Infrastructure;
+using StudentsApp.BLL.Message;
 
 namespace StudentsApp.BLL.Services
 {
@@ -34,7 +35,7 @@ namespace StudentsApp.BLL.Services
 
             if (group == null)
             {
-                throw new ValidationException("Группа не найдена");
+                throw new ValidationException(new GroupMessage().NotFound());
             }
 
             return group;
@@ -47,7 +48,7 @@ namespace StudentsApp.BLL.Services
 
             if (student == null)
             {
-                throw new ValidationException("Студент не найден");
+                throw new ValidationException(new StudentMessage().NotFound());
             }
 
             return student;
@@ -59,7 +60,7 @@ namespace StudentsApp.BLL.Services
 
             if (student == null)
             {
-                throw new ValidationException($"Студент по email {email} не найден");
+                throw new ValidationException(new StudentMessage().NotFoundByEmail(email));
             }
 
             return student;
@@ -123,18 +124,18 @@ namespace StudentsApp.BLL.Services
             OperationDetails answer = null;
 
             var group = ReverseConvert(entity);//convert group
-            
+
             //check if name group is exist in DB
             if (IsGroupExistByName(entity.GroupName))
             {
-                answer = new OperationDetails(false, $"Группа с названием '{entity.GroupName}' уже сущесвует");
+                answer = new OperationDetails(false, new GroupMessage().IsExist(entity.GroupName));
             }
             else
             {
                 group.Id = BaseEntity.GenerateId;
                 DataBase.GroupRepository.Add(group);
                 await DataBase.SaveAsync();
-                answer = new OperationDetails(true, $"Группа '{entity.GroupName}' успешно создана");
+                answer = new OperationDetails(true, new GroupMessage().Create(entity.GroupName));
             }
 
             return answer;
@@ -179,9 +180,9 @@ namespace StudentsApp.BLL.Services
                 var group = GetGroupIfExist(id);
 
                 DataBase.StudentGroupRepository.FullRemove(group.ListStudents);
+                answer = new OperationDetails(true, new GroupMessage().FullRemove(group.GroupName));
                 DataBase.GroupRepository.FullRemove(group);
                 DataBase.Save();
-                answer = new OperationDetails(true, $"Группа {group.GroupName} полностью удален из базы");
             }
             catch (Exception ex)
             {
@@ -212,7 +213,7 @@ namespace StudentsApp.BLL.Services
 
                 DataBase.GroupRepository.Remove(group);
                 DataBase.Save();
-                answer = new OperationDetails(true, $"Группа {group.GroupName} помечена как 'Удалён'");
+                answer = new OperationDetails(true, new GroupMessage().Remove(group.GroupName));
             }
             catch (Exception ex)
             {
@@ -270,14 +271,14 @@ namespace StudentsApp.BLL.Services
 
             if (IsGroupExistByName(entity.GroupName))//if find
             {
-                answer = new OperationDetails(false, $"Группа с названием {entity.GroupName} уже существует");
+                answer = new OperationDetails(false, new GroupMessage().IsExist(entity.GroupName));
             }
             else
             {
                 var newGroup = ReverseConvert(entity);//convert DTO to entity DB
                 DataBase.GroupRepository.Update(newGroup);
                 await DataBase.SaveAsync();
-                answer = new OperationDetails(true, "Данные сохранены");
+                answer = new OperationDetails(true, new GroupMessage().Update());
             }
 
             return answer;

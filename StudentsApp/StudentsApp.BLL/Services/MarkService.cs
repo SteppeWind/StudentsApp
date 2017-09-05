@@ -9,6 +9,7 @@ using StudentsApp.DAL.Contracts;
 using StudentsApp.DAL.Entities;
 using AutoMapper;
 using StudentsApp.BLL.Infrastructure;
+using StudentsApp.BLL.Message;
 
 namespace StudentsApp.BLL.Services
 {
@@ -26,7 +27,7 @@ namespace StudentsApp.BLL.Services
 
             if (mark == null)
             {
-                throw new ValidationException("Запись не найдена");
+                throw new ValidationException(new MarkMessage().NotFound());
             }
 
             return mark;
@@ -126,7 +127,7 @@ namespace StudentsApp.BLL.Services
 
                 DataBase.MarkRepository.Add(mark);//add converted mark
                 await DataBase.SaveAsync();
-                answer = new OperationDetails(true, "Оценка успешно добавлена");
+                answer = new OperationDetails(true, new MarkMessage().Create());
             }
             catch (Exception ex)
             {
@@ -149,7 +150,7 @@ namespace StudentsApp.BLL.Services
             {
                 var mark = GetMarkIfExist(id);//find mark
 
-                string message = $"Оценка для студента '{mark.Student.Profile}' \n по дисциплине '{mark.Subject.SubjectName}' полностью удалена из базы";
+                string message = new MarkMessage().FullRemove(mark.Student.Profile.ToString(), mark.Subject.SubjectName);
                 answer = new OperationDetails(true, message);
                 DataBase.MarkRepository.FullRemove(mark);//delete from DB
                 DataBase.Save();
@@ -187,7 +188,7 @@ namespace StudentsApp.BLL.Services
 
                 DataBase.MarkRepository.Remove(mark);
                 DataBase.Save();
-                string message = $"Оценка для студента '{mark.Student.Profile}' \n по дисциплине '{mark.Subject.SubjectName}' помечена как 'Удалён'";
+                string message = new MarkMessage().Remove(mark.Student.Profile.ToString(), mark.Subject.SubjectName);
                 answer = new OperationDetails(true, message);
             }
             catch (Exception ex)
@@ -227,7 +228,8 @@ namespace StudentsApp.BLL.Services
                     DataBase.MarkRepository.Update(testMark);
                 }
 
-                answer = new OperationDetails(true, $"Для студента '{mark.Student.Profile}' по дисциплине '{mark.Subject.SubjectName}' оценка успешно обновлена");
+                string message = new MarkMessage().Update(mark.Student.Profile.ToString(), mark.Subject.SubjectName);
+                answer = new OperationDetails(true, message);
                 await DataBase.SaveAsync();
             }
             catch (Exception ex)

@@ -99,6 +99,15 @@
     <Compile Include="Infrastructure\PersonNotFoundException.cs" />
     <Compile Include="Infrastructure\ServiceModule.cs" />
     <Compile Include="Infrastructure\ValidationException.cs" />
+    <Compile Include="Message\DeanMessage.cs" />
+    <Compile Include="Message\FacultyMessage.cs" />
+    <Compile Include="Message\GroupMessage.cs" />
+    <Compile Include="Message\MarkMessage.cs" />
+    <Compile Include="Message\Message.cs" />
+    <Compile Include="Message\PersonMessage.cs" />
+    <Compile Include="Message\StudentMessage.cs" />
+    <Compile Include="Message\SubjectMessage.cs" />
+    <Compile Include="Message\TeacherMessage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\BaseService.cs" />
     <Compile Include="Services\DeanService.cs" />

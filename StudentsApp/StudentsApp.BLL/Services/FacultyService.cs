@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 using System.Threading.Tasks;
+using StudentsApp.BLL.Message;
 
 namespace StudentsApp.BLL.Services
 {
@@ -32,7 +33,7 @@ namespace StudentsApp.BLL.Services
 
             if (faculty == null)
             {
-                throw new ValidationException("Факультет не найден");
+                throw new ValidationException(new FacultyMessage().NotFound());
             }
 
             return faculty;
@@ -85,7 +86,7 @@ namespace StudentsApp.BLL.Services
             //find faculty with same name, if exist, then throw ValidationException
             if (IsFacultyExistByName(entity.FacultyName))
             {
-                answer = new OperationDetails(false, $"Факультет с именем {entity.FacultyName} уже существует");
+                answer = new OperationDetails(false, new FacultyMessage().IsExist(entity.FacultyName));
             }
             else
             {
@@ -93,7 +94,7 @@ namespace StudentsApp.BLL.Services
 
                 DataBase.FacultyRepository.Add(faculty);
                 await DataBase.SaveAsync();
-                answer = new OperationDetails(true, $"Факультет {entity.FacultyName} успешно добавлен в базу");
+                answer = new OperationDetails(true, new FacultyMessage().Create(faculty.FacultyName));
             }
 
             return answer;
@@ -116,11 +117,9 @@ namespace StudentsApp.BLL.Services
                 DataBase.TeacherFacultyRepository.FullRemove(faculty.ListTeacherFaculty);
                 DataBase.GroupRepository.FullRemove(faculty.ListGroups);
                 DataBase.SubjectRepository.FullRemove(faculty.ListSubjects);
-
+                answer = new OperationDetails(true, new FacultyMessage().Create(faculty.FacultyName));
                 DataBase.FacultyRepository.FullRemove(faculty);
                 DataBase.Save();
-
-                answer = new OperationDetails(true, $"Факультет {faculty.FacultyName} полностью удален из базы");
             }
             catch (Exception ex)
             {
@@ -158,7 +157,7 @@ namespace StudentsApp.BLL.Services
 
                 DataBase.FacultyRepository.Remove(faculty);
                 DataBase.Save();
-                answer = new OperationDetails(true, $"Факультет {faculty.FacultyName} помечен как 'Удалён'");
+                answer = new OperationDetails(true, new FacultyMessage().Remove(faculty.FacultyName));
             }
             catch (Exception ex)
             {
@@ -175,7 +174,7 @@ namespace StudentsApp.BLL.Services
 
             if (IsFacultyExistByName(entity.FacultyName))
             {
-                answer = new OperationDetails(false, $"Факультет с именем {entity.FacultyName} уже существует");
+                answer = new OperationDetails(false, new FacultyMessage().IsExist(entity.FacultyName));
             }
             else
             {
@@ -185,7 +184,7 @@ namespace StudentsApp.BLL.Services
                 DataBase.FacultyRepository.Update(faculty);
                 await DataBase.SaveAsync();
 
-                answer = new OperationDetails(true, $"Информация о факультете успешно обновлена");
+                answer = new OperationDetails(true, new FacultyMessage().Update());
             }
 
             return answer;

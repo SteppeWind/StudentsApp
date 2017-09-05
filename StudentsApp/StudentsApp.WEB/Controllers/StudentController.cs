@@ -44,8 +44,7 @@ namespace StudentsApp.WEB.Controllers
             TeacherService = teacherService;
             DeanService = deanService;
             StudentSubjectService = studentSubjectService;
-        }
-
+        }        
 
         int pageSize = 10;
 

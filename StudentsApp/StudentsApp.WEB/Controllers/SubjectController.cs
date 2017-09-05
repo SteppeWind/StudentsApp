@@ -12,6 +12,45 @@ using System.Web.Mvc;
 
 namespace StudentsApp.WEB.Controllers
 {
+    interface IA
+    {
+        int GetId { get; }
+    }    
+
+    class A : IA
+    {
+        public int GetId => throw new NotImplementedException();
+    }
+
+    class B
+    {
+        A SomeProp { get; set; }
+
+        public B()
+        {
+            SomeProp = new A();
+        }
+    }
+
+    class C
+    {
+        IA Field;
+
+        public C(IA param)
+        {
+            Field = param;
+        }
+    }    
+
+    class Ninject
+    {
+        public static T Create<T>() where T : class
+        {
+            2
+        }
+    }
+
+
     [Authorize(Roles = "dean, admin")]
     public class SubjectController : Controller
     {
@@ -51,30 +90,27 @@ namespace StudentsApp.WEB.Controllers
                 var subjectDTO = BaseViewModel.UniversalReverseConvert<RegisterSubject, SubjectDTO>(subject);
                 var result = await SubjectService.AddAsync(subjectDTO);
 
-                var tempDataMessage = TempData["message"] = "";
-                var tempDataErrorMessage = TempData["errorMessage"] = "";
-                string message = result.Message + "/n";
+                string message = result.Message + "<br>";
 
                 if (result.Succedeed)
                 {
-                    subjectDTO = SubjectService.GetAll.Last();
+                    TempData["message"] = message;
 
                     foreach (var item in subject.SelectedIdTeachers)
                     {
-                        result = await TeacherSubjectService.AddAsync(new TeacherSubjectDTO()
+                        result = TeacherSubjectService.AddBySubjectName(subjectDTO.SubjectName, new TeacherSubjectDTO()
                         {
-                            TeacherId = item,
-                            SubjectId = subject.Id
+                            TeacherId = item
                         });
-                        message = result.Message + "/n";
+                        message = result.Message + "<br>";
 
                         if (result.Succedeed)
                         {
-                            tempDataMessage += message;
+                            TempData["message"] += message;
                         }
                         else
                         {
-                            tempDataErrorMessage += message;
+                            TempData["errorMessage"] += message;
                         }
                     }
 
@@ -82,7 +118,7 @@ namespace StudentsApp.WEB.Controllers
                 }
                 else
                 {
-                    tempDataErrorMessage = message;
+                    TempData["errorMessage"] = message;
                 }
             }
 

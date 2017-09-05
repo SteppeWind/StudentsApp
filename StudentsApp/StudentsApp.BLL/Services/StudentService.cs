@@ -9,6 +9,7 @@ using StudentsApp.DAL.Contracts;
 using StudentsApp.DAL.Entities;
 using AutoMapper;
 using StudentsApp.BLL.Infrastructure;
+using StudentsApp.BLL.Message;
 
 namespace StudentsApp.BLL.Services
 {
@@ -25,7 +26,7 @@ namespace StudentsApp.BLL.Services
 
             if (subject == null)
             {
-                throw new ValidationException("Предмет не найден");
+                throw new ValidationException(new SubjectMessage().NotFound());
             }
 
             return subject;
@@ -37,7 +38,7 @@ namespace StudentsApp.BLL.Services
 
             if (teacher == null)
             {
-                throw new ValidationException("Преподаватель не найден");
+                throw new ValidationException(new TeacherMessage().NotFound());
             }
 
             return teacher;
@@ -49,7 +50,7 @@ namespace StudentsApp.BLL.Services
 
             if (student == null)
             {
-                throw new ValidationException("Студент не найден");
+                throw new ValidationException(new StudentMessage().NotFound());
             }
 
             return student;
@@ -61,7 +62,7 @@ namespace StudentsApp.BLL.Services
 
             if (student == null)
             {
-                throw new ValidationException("Студент не найден");
+                throw new ValidationException(new StudentMessage().NotFoundByEmail(email));
             }
 
             return student;
@@ -109,7 +110,7 @@ namespace StudentsApp.BLL.Services
 
                 if (isExist)//if exist
                 {
-                    answer = new OperationDetails(false, $"Студент с email '{entity.Email}' уже существует");
+                    answer = new OperationDetails(false, new StudentMessage().IsExist(entity.Email));
                 }
                 else
                 {
@@ -120,7 +121,7 @@ namespace StudentsApp.BLL.Services
                     await DataBase.ProfileManager.AddToRoleAsync(student.Id, "student");
                     await DataBase.SaveAsync();
 
-                    answer = new OperationDetails(true, $"Студент '{entity.FullName}' успешно зарегистрирован");
+                    answer = new OperationDetails(true, new StudentMessage().Create(student.Profile.ToString()));
                 }
             }
             catch (Exception ex)
@@ -146,7 +147,7 @@ namespace StudentsApp.BLL.Services
 
                 DataBase.StudentRepository.Remove(student.Id);
                 DataBase.Save();
-                answer = new OperationDetails(true, $"Студент {student.Profile.ToString()} помечен как 'Удалён'");
+                answer = new OperationDetails(true, new StudentMessage().Remove(student.Profile.ToString()));
             }
             catch (Exception ex)
             {
@@ -172,7 +173,7 @@ namespace StudentsApp.BLL.Services
                 DataBase.StudentGroupRepository.FullRemove(student.ListGroups);
                 DataBase.StudentSubjectRepository.FullRemove(student.ListVisitSubjects);
                 DataBase.MarkRepository.FullRemove(student.ListMarks);
-                answer = new OperationDetails(true, $"Студент {student.Profile.ToString()} полностью удален из базы");
+                answer = new OperationDetails(true, new StudentMessage().FullRemove(student.Profile.ToString()));
                 Task.Run(async () => await DeleteProfile(student.Profile));
                 DataBase.StudentRepository.FullRemove(idStudent);
                 DataBase.Save();
@@ -193,7 +194,7 @@ namespace StudentsApp.BLL.Services
             {
                 if (PersonIsExist(entity))
                 {
-                    answer = new OperationDetails(false, $"Профайл с emal {entity.Email} уже существует");
+                    answer = new OperationDetails(false, new StudentMessage().IsExist(entity.Email));
                 }
                 else
                 {
@@ -202,7 +203,7 @@ namespace StudentsApp.BLL.Services
                     UpdatePerson(entity, profile);
                     var result = await DataBase.ProfileManager.UpdateAsync(profile);//update profile
                     await DataBase.SaveAsync();
-                    answer = new OperationDetails(true, $"Профиль студента успешно обновлен");                    
+                    answer = new OperationDetails(true, new StudentMessage().Update());                    
                 }
             }
             catch (Exception ex)

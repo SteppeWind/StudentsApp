@@ -9,6 +9,7 @@ using StudentsApp.DAL.Entities;
 using AutoMapper;
 using StudentsApp.DAL.Contracts;
 using StudentsApp.BLL.Infrastructure;
+using StudentsApp.BLL.Message;
 
 namespace StudentsApp.BLL.Services
 {
@@ -25,7 +26,7 @@ namespace StudentsApp.BLL.Services
 
             if (subject == null)
             {
-                throw new ValidationException("Предмет не найден");
+                throw new ValidationException(new SubjectMessage().NotFound());
             }
 
             return subject;
@@ -81,13 +82,14 @@ namespace StudentsApp.BLL.Services
 
                 if (IsSubjectExist(subject.SubjectName))
                 {
-                    answer = new OperationDetails(false, $"Предмет с именем {subject.SubjectName} уже существует");
+                    answer = new OperationDetails(false, new SubjectMessage().IsExist(subject.SubjectName));
                 }
                 else
                 {
+                    newSubject.Id = BaseEntity.GenerateId;
                     DataBase.SubjectRepository.Add(newSubject);
                     await DataBase.SaveAsync();
-                    answer = new OperationDetails(true, $"Предмет {subject.SubjectName} успешно добавлен");
+                    answer = new OperationDetails(true, new SubjectMessage().Create(subject.SubjectName));
                 }
             }
             catch (Exception ex)
@@ -123,7 +125,7 @@ namespace StudentsApp.BLL.Services
 
                 DataBase.SubjectRepository.Remove(subject);
                 DataBase.Save();
-                answer = new OperationDetails(true, $"Предмет {subject.SubjectName} помечен как 'Удалён'");
+                answer = new OperationDetails(true, new SubjectMessage().Remove(subject.SubjectName));
             }
             catch (Exception ex)
             {
@@ -142,7 +144,7 @@ namespace StudentsApp.BLL.Services
             {
                 if (IsSubjectExist(subject.SubjectName))
                 {
-                    answer = new OperationDetails(false, $"Предмет с именем {subject.SubjectName} уже существует");
+                    answer = new OperationDetails(false, new SubjectMessage().IsExist(subject.SubjectName));
                 }
                 else
                 {
@@ -181,7 +183,7 @@ namespace StudentsApp.BLL.Services
                 DataBase.TeacherSubjectRepository.FullRemove(subject.ListTeachers);
                 DataBase.SubjectRepository.FullRemove(subject);
                 DataBase.Save();
-                answer = new OperationDetails(true, $"Предмет {subject.SubjectName} полностью удалён из базы");
+                answer = new OperationDetails(true, new SubjectMessage().FullRemove(subject.SubjectName));
             }
             catch (Exception ex)
             {

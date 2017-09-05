@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using StudentsApp.BLL.Infrastructure;
 using StudentsApp.DAL.Contracts;
+using StudentsApp.BLL.Message;
 
 namespace StudentsApp.BLL.Services
 {
@@ -57,7 +58,7 @@ namespace StudentsApp.BLL.Services
 
             if (result == null)
             {
-                throw new ValidationException("Преподаватель не найден");
+                throw new ValidationException(new TeacherMessage().NotFound());
             }
 
             return result;
@@ -69,7 +70,7 @@ namespace StudentsApp.BLL.Services
 
             if (result == null)
             {
-                throw new ValidationException("Дисциплина не найдена");
+                throw new ValidationException(new SubjectMessage().NotFound());
             }
 
             return result;
@@ -81,7 +82,7 @@ namespace StudentsApp.BLL.Services
 
             if (result == null)
             {
-                throw new ValidationException("Дисциплина не найдена");
+                throw new ValidationException(new SubjectMessage().NotFound(subjectName));
             }
 
             return result;
@@ -116,7 +117,7 @@ namespace StudentsApp.BLL.Services
 
                 if (IsTeacherHaveSubject(entity))
                 {
-                    answer = new OperationDetails(false, $"Дисциплина '{subject.SubjectName}' уже преподаётся данным преподавателем '{teacher.Profile}'");
+                    answer = new OperationDetails(false, $"Дисциплина \"{subject.SubjectName}\" уже преподаётся данным преподавателем \"{teacher.Profile}\"");
                 }
                 else
                 {
@@ -124,7 +125,7 @@ namespace StudentsApp.BLL.Services
                     model.Id = BaseEntity.GenerateId;
                     DataBase.TeacherSubjectRepository.Add(model);
                     await DataBase.SaveAsync();
-                    answer = new OperationDetails(true, $"Дисциплина '{subject.SubjectName}' успешно добавлена преподавателю '{teacher.Profile}'");
+                    answer = new OperationDetails(true, $"Дисциплина \"{subject.SubjectName}\" успешно добавлена преподавателю \"{teacher.Profile}\"");
                 }
             }
             catch (Exception ex)
@@ -141,7 +142,7 @@ namespace StudentsApp.BLL.Services
 
             try
             {
-                answer = new OperationDetails(true, $"Дисцплина '{model.Subject.SubjectName}' для преподавателя '{model.Teacher.Profile}' полностью удалена из базы");
+                answer = new OperationDetails(true, $"Дисцплина \"{model.Subject.SubjectName}\" для преподавателя \"{model.Teacher.Profile}\" полностью удалена из базы");
                 DataBase.TeacherSubjectRepository.FullRemove(model);
                 DataBase.Save();
             }
@@ -185,7 +186,7 @@ namespace StudentsApp.BLL.Services
                 var model = DataBase.TeacherSubjectRepository[id];
                 DataBase.TeacherSubjectRepository.Remove(model);
                 DataBase.Save();
-                answer = new OperationDetails(true, $"Дисцплина '{model.Subject.SubjectName}' для преподавателя '{model.Teacher.Profile}' помечена как 'Удалён'");
+                answer = new OperationDetails(true, $"Дисцплина \"{model.Subject.SubjectName}\" для преподавателя \"{model.Teacher.Profile}\" помечена как 'Удалён'");
             }
             catch (Exception ex)
             {
@@ -280,6 +281,31 @@ namespace StudentsApp.BLL.Services
             {
                 var model = GetTeacherSubjectIfExistBySubjectAndTeacherId(subjectId, teacherId);
                 answer = FullRemove(model);
+            }
+            catch (Exception ex)
+            {
+                answer = new OperationDetails(false, ex.Message);
+            }
+
+            return answer;
+        }
+
+        public OperationDetails AddBySubjectName(string subjectName, TeacherSubjectDTO entity)
+        {
+            OperationDetails answer = null;
+
+            try
+            {
+                var subject = GetSubjectIfExistByName(subjectName);
+                var teacher = GetTeacherIfExistById(entity.TeacherId);
+
+                DataBase.TeacherSubjectRepository.Add(new TeacherSubject()
+                {
+                    SubjectId = subject.Id,
+                    TeacherId = entity.TeacherId
+                });
+                DataBase.Save();
+                answer = new OperationDetails(true, $"Дисциплина \"{subject.SubjectName}\" успешно добавлена преподавателю \"{teacher.Profile}\"");
             }
             catch (Exception ex)
             {

@@ -10,6 +10,7 @@ using StudentsApp.DAL.Entities;
 using AutoMapper;
 using StudentsApp.BLL.Infrastructure;
 using System.Collections;
+using StudentsApp.BLL.Message;
 
 namespace StudentsApp.BLL.Services
 {
@@ -26,7 +27,7 @@ namespace StudentsApp.BLL.Services
 
             if (teacher == null)
             {
-                throw new PersonNotFoundException("Преподаватель не найден");
+                throw new PersonNotFoundException(new TeacherMessage().NotFound());
             }
 
             return teacher;
@@ -38,7 +39,7 @@ namespace StudentsApp.BLL.Services
 
             if (teacher == null)
             {
-                throw new ValidationException("Преподаватель не найден");
+                throw new ValidationException(new TeacherMessage().NotFoundByEmail(email));
             }
 
             return teacher;
@@ -50,7 +51,7 @@ namespace StudentsApp.BLL.Services
 
             if (subject == null)
             {
-                throw new ValidationException("Дисциплина не найдена");
+                throw new ValidationException(new SubjectMessage().NotFound());
             }
 
             return subject;
@@ -62,7 +63,7 @@ namespace StudentsApp.BLL.Services
 
             if (faculty == null)
             {
-                throw new ValidationException("Факультет не найден");
+                throw new ValidationException(new FacultyMessage().NotFound());
             }
 
             return faculty;
@@ -112,7 +113,7 @@ namespace StudentsApp.BLL.Services
             bool isExist = PersonIsExist(entity);//find the same email
             if (isExist)
             {
-                answer = new OperationDetails(false, $"Пользователь с email {entity.Email} уже существует");
+                answer = new OperationDetails(false, new TeacherMessage().IsExist(entity.Email));
             }
             else
             {
@@ -123,7 +124,7 @@ namespace StudentsApp.BLL.Services
                 await DataBase.ProfileManager.AddToRoleAsync(teacher.Id, "teacher");
                 await DataBase.SaveAsync();
 
-                answer = new OperationDetails(true, $"Преподаватель {teacher.Profile} успешно создан");
+                answer = new OperationDetails(true, new TeacherMessage().Create(teacher.Profile.ToString()));
             }
 
             return answer;
@@ -141,7 +142,7 @@ namespace StudentsApp.BLL.Services
                 DataBase.TeacherFacultyRepository.FullRemove(teacher.ListTeacherFaculty);
                 DataBase.StudentSubjectRepository.FullRemove(teacher.ListStudents);
                 DataBase.TeacherSubjectRepository.FullRemove(teacher.ListSubjects);
-                answer = new OperationDetails(true, $"Преподаватель '{teacher.Profile}' полностью удален из базы");
+                answer = new OperationDetails(true, new TeacherMessage().FullRemove(teacher.Profile.ToString()));
                 Task.Run(async () => await DeleteProfile(teacher.Profile));
                 DataBase.TeacherRepository.FullRemove(teacher);
                 DataBase.Save();
@@ -179,7 +180,7 @@ namespace StudentsApp.BLL.Services
 
                 DataBase.TeacherRepository.Remove(teacher);
                 DataBase.Save();
-                answer = new OperationDetails(true, $"Преподаватель {teacher.Profile} почемен как 'Удалён'");
+                answer = new OperationDetails(true, new TeacherMessage().Remove(teacher.Profile.ToString()));
             }
             catch (Exception ex)
             {
@@ -216,7 +217,7 @@ namespace StudentsApp.BLL.Services
 
             if (teacher == null)
             {
-                throw new PersonNotFoundException(null, email, $"Профиль по email среди учителей {email} не найден");
+                throw new PersonNotFoundException(null, email, new TeacherMessage().NotFoundByEmail(email));
             }
 
             return ConvertAsync(teacher);

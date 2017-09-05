@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using StudentsApp.DAL.Contracts;
 using StudentsApp.BLL.Contracts;
 using StudentsApp.BLL.Infrastructure;
+using StudentsApp.BLL.Message;
 
 namespace StudentsApp.BLL.Services
 {
@@ -31,7 +32,7 @@ namespace StudentsApp.BLL.Services
 
             if (result == null)
             {
-                throw new PersonNotFoundException("Преподаватель не найден");
+                throw new PersonNotFoundException(new TeacherMessage().NotFound());
             }
 
             return result;
@@ -43,7 +44,7 @@ namespace StudentsApp.BLL.Services
 
             if (result == null)
             {
-                throw new PersonNotFoundException("Преподаватель не найден");
+                throw new PersonNotFoundException(new TeacherMessage().NotFoundByEmail(email));
             }
 
             return result;
@@ -55,7 +56,7 @@ namespace StudentsApp.BLL.Services
 
             if (result == null)
             {
-                throw new ValidationException("Факультет не найден");
+                throw new ValidationException(new FacultyMessage().NotFound());
             }
 
             return result;
@@ -96,7 +97,7 @@ namespace StudentsApp.BLL.Services
 
             if (IsTeacherHaveFaculty(entity))
             {
-                answer = new OperationDetails(false, $"Преподаватель '{teacher.Profile}' уже преподаёт на факультете '{faculty.FacultyName}'");
+                answer = new OperationDetails(false, $"Преподаватель \"{teacher.Profile}\" уже преподаёт на факультете \"{faculty.FacultyName}\"");
             }
             else
             {
@@ -104,7 +105,7 @@ namespace StudentsApp.BLL.Services
                 model.Id = BaseEntity.GenerateId;
                 DataBase.TeacherFacultyRepository.Add(model);
                 await DataBase.SaveAsync();
-                answer = new OperationDetails(true, $"Преподавателю '{teacher.Profile}' добавлено новое звание '{post.NamePostTeacher}' на факультете '{faculty.FacultyName}'");
+                answer = new OperationDetails(true, $"Преподавателю \"{teacher.Profile}\" добавлено новое звание \"{post.NamePostTeacher}\" на факультете \"{faculty.FacultyName}\"");
             }
 
             return answer;
@@ -139,7 +140,7 @@ namespace StudentsApp.BLL.Services
                 var model = DataBase.TeacherFacultyRepository[id];
                 DataBase.TeacherFacultyRepository.FullRemove(model);
                 DataBase.Save();
-                string message = $"Для преподавателя '{model.Teacher.Profile}' звание '{model.Post.NamePostTeacher}' на факультете '{model.Faculty.FacultyName}' полностью удалено из базы";
+                string message = $"Для преподавателя \"{model.Teacher.Profile}\" звание \"{model.Post.NamePostTeacher}\" на факультете \"{model.Faculty.FacultyName}\" полностью удалено из базы";
                 answer = new OperationDetails(true, message);
             }
             catch (Exception ex)
@@ -164,7 +165,7 @@ namespace StudentsApp.BLL.Services
                 var model = DataBase.TeacherFacultyRepository[id];
                 DataBase.TeacherFacultyRepository.Remove(model);
                 DataBase.Save();
-                string message = $"Для преподавателя '{model.Teacher.Profile}' звание '{model.Post.NamePostTeacher}' на факультете '{model.Faculty.FacultyName}' помечено как 'Удалён'";
+                string message = $"Для преподавателя \"{model.Teacher.Profile}\" звание \"{model.Post.NamePostTeacher}\" на факультете \"{model.Faculty.FacultyName}\" помечено как 'Удалён'";
                 answer = new OperationDetails(true, message);
             }
             catch (Exception ex)

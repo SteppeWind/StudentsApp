@@ -9,6 +9,7 @@ using AutoMapper;
 using StudentsApp.DAL.Entities;
 using StudentsApp.DAL.Contracts;
 using StudentsApp.BLL.Infrastructure;
+using StudentsApp.BLL.Message;
 
 namespace StudentsApp.BLL.Services
 {
@@ -30,7 +31,7 @@ namespace StudentsApp.BLL.Services
 
             if (dean == null)
             {
-                throw new ValidationException("Декан не найден");
+                throw new ValidationException(new DeanMessage().NotFound());
             }
 
             return dean;
@@ -47,7 +48,7 @@ namespace StudentsApp.BLL.Services
 
             if (faculty == null)
             {
-                throw new ValidationException("Факультет не найден");
+                throw new ValidationException(new FacultyMessage().NotFound());
             }
 
             return faculty;
@@ -104,11 +105,11 @@ namespace StudentsApp.BLL.Services
                 await DataBase.ProfileManager.AddToRoleAsync(dean.Id, "dean");
                 await DataBase.SaveAsync();//save result
 
-                answer = new OperationDetails(true, $"Декан {entity.FullName} успешно зарегистрирован");
+                answer = new OperationDetails(true, new DeanMessage().Create(dean.Profile.ToString()));
             }
             else
             {
-                answer = new OperationDetails(false, $"Декан с email {entity.Email} уже существует");
+                answer = new OperationDetails(false, new DeanMessage().IsExist(entity.Email));
             }
 
             return answer;
@@ -127,7 +128,7 @@ namespace StudentsApp.BLL.Services
                 var dean = GetDeanIfExist(id);//find dean
                 DataBase.DeanRepository.FullRemove(dean);//call full remove dean
                 DataBase.Save();
-                answer = new OperationDetails(true, $"Декан {dean.Profile.ToString()} полностью удален из базы");
+                answer = new OperationDetails(true, new DeanMessage().FullRemove(dean.Profile.ToString()));
             }
             catch (Exception ex)
             {
@@ -164,7 +165,7 @@ namespace StudentsApp.BLL.Services
                 DataBase.DeanRepository.Remove(dean);//call remove dean
                 DataBase.Save();
 
-                answer = new OperationDetails(true, $"Декан по email {dean.Profile.Email} помечен как 'Удалён'");
+                answer = new OperationDetails(true, new DeanMessage().Remove(dean.Profile.ToString()));
             }
             catch (Exception ex)
             {
@@ -187,7 +188,7 @@ namespace StudentsApp.BLL.Services
             {
                 if (PersonIsExist(entity))
                 {
-                    answer = new OperationDetails(false, $"Декан с email {entity.Email} уже существует");
+                    answer = new OperationDetails(false, new DeanMessage().IsExist(entity.Email));
                 }
                 else
                 {
@@ -197,7 +198,7 @@ namespace StudentsApp.BLL.Services
                     UpdatePerson(entity, profile);//update user profile
                     await DataBase.ProfileManager.UpdateAsync(profile);//call update in DB
                     await DataBase.SaveAsync();                   
-                    answer = new OperationDetails(true, $"Профиль успешно обновлен");
+                    answer = new OperationDetails(true, new DeanMessage().Update());
                 }
             }
             catch (Exception ex)

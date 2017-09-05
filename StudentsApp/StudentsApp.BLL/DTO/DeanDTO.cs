@@ -15,6 +15,7 @@ namespace StudentsApp.BLL.DTO
 
         public DeanDTO()
         {
+            Role = "dean";
             ListIdDeanFaculties = new List<string>();
         }
     }
